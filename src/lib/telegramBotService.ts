@@ -24,21 +24,30 @@ function createWhatsAppConfirmationUrl(ord: any) {
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://themarsel.vercel.app").replace(/\/+$/, "");
   const confirmUrl = `${siteUrl}/confirm-order/${safeOrderNum}`;
 
-  const waText = `Hello ${safeCustomer}!
-This is MARSEL STORE confirming your order #${safeOrderNum}.
+  const lines = [
+    `Hello ${safeCustomer}!`,
+    `This is MARSEL STORE confirming your order ${safeOrderNum}.`,
+    "",
+    "Ordered Pieces:",
+    itemsList,
+    `Total to Pay: ${Number(ord.total_amount).toLocaleString()} EGP (Cash on Delivery)`,
+    "",
+    "Delivery Address:",
+    `${safeGov} - ${safeArea}`,
+    safeAddress + (safeNotes ? ` (Notes: ${safeNotes})` : ""),
+    "",
+    "Order Confirmation Link:",
+    confirmUrl,
+  ];
 
-Ordered Pieces:
-${itemsList}
-Total to Pay: ${Number(ord.total_amount).toLocaleString()} EGP (Cash on Delivery)
+  const waText = lines
+    .join("\n")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[#]/g, "")
+    .trim();
 
-Delivery Address:
-${safeGov} - ${safeArea}
-${safeAddress}${safeNotes ? `\nNotes: ${safeNotes}` : ""}
-
-Order Confirmation Link:
-${confirmUrl}`.trim();
-
-  return `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodeURIComponent(waText)}`;
+  return `https://wa.me/${waPhone}?text=${encodeURIComponent(waText)}`;
 }
 
 export async function processTelegramMessage(chatId: string | number, text: string): Promise<boolean> {

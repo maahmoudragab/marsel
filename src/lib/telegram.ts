@@ -227,21 +227,30 @@ export async function sendTelegramOrderNotification(order: OrderAlertPayload): P
     const confirmUrl = `${siteUrl}/confirm-order/${safeOrderNum}`;
     const trackUrl = `${siteUrl}/track?order=${safeOrderNum}`;
 
-    const waMessageText = `Hello ${safeCustomer}!
-This is MARSEL STORE confirming your order #${safeOrderNum}.
+    const lines = [
+      `Hello ${safeCustomer}!`,
+      `This is MARSEL STORE confirming your order ${safeOrderNum}.`,
+      "",
+      "Ordered Pieces:",
+      waItemsList,
+      `Total to Pay: ${order.total_amount.toLocaleString()} EGP (Cash on Delivery)`,
+      "",
+      "Delivery Address:",
+      `${safeGov} - ${safeArea}`,
+      safeAddress + (safeNotes ? ` (Notes: ${safeNotes})` : ""),
+      "",
+      "Order Confirmation Link:",
+      confirmUrl,
+    ];
 
-Ordered Pieces:
-${waItemsList}
-Total to Pay: ${order.total_amount.toLocaleString()} EGP (Cash on Delivery)
+    const waMessageText = lines
+      .join("\n")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/[#]/g, "")
+      .trim();
 
-Delivery Address:
-${safeGov} - ${safeArea}
-${safeAddress}${safeNotes ? `\nNotes: ${safeNotes}` : ""}
-
-Order Confirmation Link:
-${confirmUrl}`.trim();
-
-    const waUrl = `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodeURIComponent(waMessageText)}`;
+    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(waMessageText)}`;
 
     // Exactly 2 control buttons: WhatsApp customer & Track order (in English)
     const inlineKeyboard = {
