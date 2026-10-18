@@ -1,0 +1,93 @@
+import React from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import ProductDetailClient from "@/components/ProductDetailClient";
+import {
+  getProductBySlugServer,
+  getRecommendationsServer,
+} from "@/lib/serverProducts";
+import { getCoverImage } from "@/lib/product";
+
+export const revalidate = 60; // SSR with ISR caching for ultra-fast performance
+
+// Dynamic SEO & Social Sharing Metadata (OpenGraph & Twitter Card)
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlugServer(slug);
+
+  if (!product) {
+    return {
+      title: "Product Not Found | MARSEL",
+      description: "This piece is no longer available.",
+    };
+  }
+
+  const coverImage = getCoverImage(product);
+  const description =
+    product.description || product.story || "Distinctive everyday piece by MARSEL. Made to be different.";
+
+  return {
+    title: `${product.title} — ${product.price} EGP | MARSEL`,
+    description,
+    openGraph: {
+      title: `${product.title} — ${product.price} EGP`,
+      description,
+      images: [
+        {
+          url: coverImage,
+          alt: product.title,
+        },
+      ],
+      siteName: "marsel",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.title} — ${product.price} EGP`,
+      description,
+      images: [coverImage],
+    },
+  };
+}
+
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const product = await getProductBySlugServer(slug);
+
+  if (!product) {
+    notFound();
+  }
+
+  const recommendations = await getRecommendationsServer(product);
+
+  return (
+    <div className="min-h-screen bg-[#e7ecea] text-black">
+      <Header />
+
+      <main className="max-w-[1700px] mx-auto px-4 sm:px-8">
+        <div className="pt-2 pb-2">
+          <nav className="text-[11px] font-mono uppercase tracking-wider text-black/50 flex items-center gap-1.5 flex-wrap">
+            <Link href="/" className="hover:text-black transition-colors font-mono">marsel</Link>
+            <span>/</span>
+            <span className="text-black font-semibold truncate max-w-[240px] sm:max-w-md">{product.title}</span>
+          </nav>
+        </div>
+
+        <ProductDetailClient product={product} recommendations={recommendations} />
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
