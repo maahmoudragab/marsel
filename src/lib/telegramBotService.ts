@@ -21,7 +21,7 @@ function createWhatsAppConfirmationUrl(ord: any) {
     .map((it: any) => `- ${String(it.title || "").replace(/[#&]/g, "")} (Size: ${it.size}${it.color ? `, Color: ${it.color}` : ""}) x${it.quantity}`)
     .join("\n");
 
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://marsel.studio").replace(/\/+$/, "");
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://themarsel.vercel.app").replace(/\/+$/, "");
   const confirmUrl = `${siteUrl}/confirm-order/${safeOrderNum}`;
 
   const waText = `Hello ${safeCustomer}!

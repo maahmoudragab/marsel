@@ -1,8 +1,8 @@
-﻿import type { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 import { getProductsServer } from "@/lib/serverProducts";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://marsel.studio";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://themarsel.vercel.app";
   const products = await getProductsServer();
 
   const productUrls: MetadataRoute.Sitemap = products.map((product) => ({

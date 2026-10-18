@@ -187,7 +187,7 @@ export async function sendTelegramOrderNotification(order: OrderAlertPayload): P
   }
 
   try {
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://marsel.studio").replace(/\/+$/, "");
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://themarsel.vercel.app").replace(/\/+$/, "");
 
     // 1. Enrich items from Supabase (slug, id, images)
     const enrichedItems = await enrichOrderItems(order.items);

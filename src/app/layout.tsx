@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://themarsel.vercel.app"),
   title: "MARSEL | Made to Be Different",
   description: "Independent clothing brand built around one simple idea: clothing should feel personal.",
 };
