@@ -8,11 +8,15 @@ export async function middleware(request: NextRequest) {
   const forwardedHost = request.headers.get("x-forwarded-host") || "";
 
   // Check if request is arriving through an admin subdomain
-  // e.g. admin.marsel.studio, admin.localhost:3000, admin.vercel.app
+  // e.g. admin.marsel.studio, themarsel-admin.vercel.app, admin-themarsel.vercel.app, admin.localhost:3000
   const isAdminSubdomain =
     host.startsWith("admin.") ||
+    host.startsWith("admin-") ||
+    host.includes("-admin.") ||
     host.includes("admin.localhost") ||
-    forwardedHost.startsWith("admin.");
+    forwardedHost.startsWith("admin.") ||
+    forwardedHost.startsWith("admin-") ||
+    forwardedHost.includes("-admin.");
 
   // Map subdomain paths cleanly to /admin internal routes
   let effectivePath = pathname;
