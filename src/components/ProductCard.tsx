@@ -16,7 +16,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="w-full min-h-[220px] sm:min-h-[290px] flex items-center justify-center p-2">
         <img
           src={getCoverImage(product)}
-          alt={product.title}
+          alt={`${product.title} — MARSEL (مارسيل) Streetwear`}
           loading="lazy"
           decoding="async"
           className="max-h-[220px] sm:max-h-[280px] w-auto max-w-full object-contain transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:opacity-85"

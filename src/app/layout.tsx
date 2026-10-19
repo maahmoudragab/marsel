@@ -1,12 +1,49 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { supreme, cairo } from "./fonts";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import {
+  SITE_URL,
+  BRAND_KEYWORDS,
+  getOrganizationSchema,
+  getWebSiteSchema,
+} from "@/lib/seo";
+
+export const viewport: Viewport = {
+  themeColor: "#e7ecea",
+  colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://themarsel.vercel.app"),
-  title: "MARSEL | Made to Be Different",
-  description: "Independent clothing brand built around one simple idea: clothing should feel personal.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "MARSEL (مارسيل) | Made to Be Different — Independent Streetwear",
+    template: "%s | MARSEL",
+  },
+  description:
+    "MARSEL (مارسيل) is an independent streetwear brand founded by Mahmoud Ragab in Cairo, Egypt. Discover premium heavyweight hoodies, oversized crewnecks, and distinctive graphic apparel. Made to be different.",
+  applicationName: "MARSEL Store",
+  authors: [{ name: "Mahmoud Ragab (محمود رجب)", url: SITE_URL }],
+  creator: "Mahmoud Ragab",
+  publisher: "MARSEL",
+  keywords: BRAND_KEYWORDS,
+  category: "Fashion & Streetwear",
+  classification: "Clothing Brand, Streetwear Label, E-commerce Store",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en-EG": "/",
+      "ar-EG": "/",
+      "x-default": "/",
+    },
+  },
   icons: {
     icon: [
       { url: "/favicon.png?v=3", sizes: "any" },
@@ -19,26 +56,41 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "MARSEL | Made to Be Different",
-    description: "Independent clothing brand built around one simple idea: clothing should feel personal.",
-    url: "/",
+    title: "MARSEL (مارسيل) | Made to Be Different — Independent Streetwear",
+    description:
+      "Independent streetwear brand founded by Mahmoud Ragab in Cairo. Premium heavyweight fleece, oversized cuts, and distinctive graphics. Fast delivery across Egypt.",
+    url: SITE_URL,
     siteName: "MARSEL",
     images: [
       {
         url: "/opengraph-image.png",
         width: 2048,
         height: 2048,
-        alt: "MARSEL",
+        alt: "MARSEL (مارسيل) — Made to Be Different",
       },
     ],
     locale: "en_US",
+    alternateLocale: ["ar_EG"],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MARSEL | Made to Be Different",
-    description: "Independent clothing brand built around one simple idea: clothing should feel personal.",
+    title: "MARSEL (مارسيل) | Made to Be Different",
+    description:
+      "Independent streetwear brand in Cairo by Mahmoud Ragab. Premium heavyweight hoodies and oversized essentials.",
     images: ["/opengraph-image.png"],
+    creator: "@marsel.studio",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -47,8 +99,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const orgSchema = getOrganizationSchema();
+  const webSiteSchema = getWebSiteSchema();
+
   return (
     <html lang="en" dir="ltr" className={`${supreme.variable} ${cairo.variable}`}>
+      <head>
+        {/* Google Structured Data / Rich Snippets (Organization & WebSite) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
+        />
+      </head>
       <body className="antialiased bg-[#e7ecea] text-black">
         <Providers>{children}</Providers>
       </body>

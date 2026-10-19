@@ -30,29 +30,57 @@ export async function generateMetadata({
   }
 
   const coverImage = getCoverImage(product);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://themarsel.vercel.app";
+  const productUrl = `${siteUrl}/products/${product.slug || product.id}`;
+  const fullCoverImageUrl = coverImage.startsWith("http")
+    ? coverImage
+    : `${siteUrl}${coverImage.startsWith("/") ? "" : "/"}${coverImage}`;
+
   const description =
-    product.description || product.story || "Distinctive everyday piece by MARSEL. Made to be different.";
+    product.description ||
+    product.story ||
+    `${product.title} by MARSEL (مارسيل) — ${product.fit || "Oversized Boxy Cut"}. Made with ${product.composition || "100% Egyptian Cotton"} in Cairo. Fast delivery & cash on delivery across Egypt.`;
 
   return {
     title: `${product.title} — ${product.price} EGP | MARSEL`,
     description,
+    keywords: [
+      product.title,
+      `${product.title} MARSEL`,
+      `${product.title} مارسيل`,
+      "MARSEL",
+      "مارسيل",
+      "مارسل",
+      product.category || "streetwear",
+      product.color_name || "apparel",
+      "oversized hoodie egypt",
+      "heavyweight cotton egypt",
+      "egyptian streetwear",
+    ].filter(Boolean),
+    alternates: {
+      canonical: productUrl,
+    },
     openGraph: {
-      title: `${product.title} — ${product.price} EGP`,
+      title: `${product.title} — ${product.price} EGP | MARSEL`,
       description,
+      url: productUrl,
+      siteName: "MARSEL",
+      type: "website",
       images: [
         {
-          url: coverImage,
-          alt: product.title,
+          url: fullCoverImageUrl,
+          width: 1200,
+          height: 1200,
+          alt: `${product.title} — MARSEL (مارسيل)`,
         },
       ],
-      siteName: "marsel",
-      type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${product.title} — ${product.price} EGP`,
+      title: `${product.title} — ${product.price} EGP | MARSEL`,
       description,
-      images: [coverImage],
+      images: [fullCoverImageUrl],
+      creator: "@marsel.studio",
     },
   };
 }
@@ -70,9 +98,17 @@ export default async function ProductDetailPage({
   }
 
   const recommendations = await getRecommendationsServer(product);
+  const { getProductSchema } = await import("@/lib/seo");
+  const productSchema = getProductSchema(product);
 
   return (
     <div className="min-h-screen bg-[#e7ecea] text-black">
+      {/* Google Product Structured Data (Rich Snippets, In-Stock, Pricing, Reviews) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+
       <Header />
 
       <main className="max-w-[1700px] mx-auto px-4 sm:px-8">

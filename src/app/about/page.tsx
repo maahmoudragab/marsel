@@ -7,8 +7,28 @@ import { ArrowUpRight, Palette, Layers, Compass, Sparkles } from "lucide-react";
 import { getWhatsAppUrl } from "@/config/brand";
 
 export const metadata: Metadata = {
-  title: "About MARSEL | Made to Be Different",
-  description: "MARSEL is an independent clothing brand built around one simple idea: clothing should feel personal.",
+  title: "About MARSEL (عن مارسيل) | Founded by Mahmoud Ragab in Cairo",
+  description:
+    "MARSEL (مارسيل) is an independent streetwear clothing brand founded by Mahmoud Ragab in Cairo, Egypt. Built around the ethos: Made to Be Different. Discover our story and production values.",
+  keywords: [
+    "About MARSEL",
+    "عن براند مارسيل",
+    "Mahmoud Ragab MARSEL",
+    "محمود رجب مارسيل",
+    "مؤسس براند مارسيل",
+    "ستريت وير مصري",
+    "قصة براند مارسيل",
+  ],
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    title: "About MARSEL (عن مارسيل) | Founded by Mahmoud Ragab in Cairo",
+    description:
+      "Independent streetwear clothing label founded by Mahmoud Ragab in Cairo, Egypt. Dedicated to personal, distinctive garments.",
+    url: "/about",
+    images: ["/opengraph-image.png"],
+  },
 };
 
 export default function AboutPage() {

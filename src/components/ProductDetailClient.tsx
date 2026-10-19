@@ -326,7 +326,7 @@ export default function ProductDetailClient({
                   >
                     <img
                       src={src}
-                      alt={product.title}
+                      alt={`${product.title} — MARSEL (مارسيل) View ${index + 1}`}
                       draggable={false}
                       decoding="async"
                       className="w-full h-full object-contain pointer-events-none select-none"
