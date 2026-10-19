@@ -51,6 +51,7 @@ export interface Product {
   provenance: string;
   house_label: string;
   tags: string[];
+  print_file_url?: string;
   is_active?: boolean;
 }
 
@@ -117,6 +118,7 @@ export function normalizeProduct(row: Record<string, unknown>): Product {
     provenance: String(row.provenance ?? "EGYPT"),
     house_label: String(row.house_label ?? "MARSEL"),
     tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
+    print_file_url: String(row.print_file_url ?? ""),
     is_active: row.is_active !== false,
   };
 }
@@ -150,6 +152,7 @@ export function emptyProductInput(): ProductInput {
     provenance: "EGYPT",
     house_label: "MARSEL",
     tags: [],
+    print_file_url: "",
     is_active: true,
   };
 }

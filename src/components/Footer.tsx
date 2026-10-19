@@ -6,8 +6,12 @@ export default function Footer() {
   return (
     <footer className="border-t border-black mt-20 py-10 px-4 sm:px-8 bg-[#e7ecea]">
       <div className="max-w-[1700px] mx-auto flex flex-col items-center justify-center text-center space-y-4 text-black">
-        <div className="text-sm font-bold tracking-[0.25em] uppercase">
-          {BRAND_CONFIG.name}
+        <div className="flex items-center justify-center">
+          <img
+            src="/logo/Black-without-bg.png"
+            alt={BRAND_CONFIG.name}
+            className="h-8 w-auto object-contain"
+          />
         </div>
 
         <p className="text-[11px] font-normal uppercase tracking-wider text-black/70">
@@ -17,6 +21,10 @@ export default function Footer() {
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] font-medium uppercase tracking-wider text-black max-w-xl">
           <Link href="/about" className="hover:underline underline-offset-4">
             ABOUT
+          </Link>
+          <span className="text-black/30">•</span>
+          <Link href="/faq" className="hover:underline underline-offset-4">
+            FAQ
           </Link>
           <span className="text-black/30">•</span>
           <Link href="/track" className="hover:underline underline-offset-4">

@@ -42,9 +42,13 @@ export default function AdminLoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-[#e7ecea] text-black px-4">
       <div className="w-full max-w-sm border border-black p-8 sm:p-10 bg-transparent space-y-8">
         {/* Header */}
-        <div className="space-y-2 border-b border-black/20 pb-6 text-left">
+        <div className="space-y-3 border-b border-black/20 pb-6 text-left">
           <div className="flex items-center justify-between">
-            <span className="text-xl font-bold tracking-[0.25em] uppercase">marsel</span>
+            <img
+              src="/logo/Black-without-bg.png"
+              alt="MARSEL"
+              className="h-7 w-auto object-contain"
+            />
             <Lock className="w-4 h-4 text-black/60" />
           </div>
           <p className="text-[10px] tracking-widest uppercase text-black/50">

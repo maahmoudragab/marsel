@@ -1,4 +1,4 @@
-﻿// Authentication & 24h Session utilities for MARSEL Studio Admin
+// Authentication & 24h Session utilities for MARSEL Studio Admin
 
 export const ADMIN_SESSION_COOKIE = "marsel_admin_session";
 export const SESSION_DURATION_SECONDS = 24 * 60 * 60; // 24 hours
@@ -57,4 +57,46 @@ export function verifyAdminPassword(password: string): boolean {
   if (!password) return false;
   const secret = getSecretKey();
   return password.trim() === secret.trim();
+}
+
+// ------------------------------------------------------------------
+// Factory Production Portal Authentication (Simple PIN/Passcode)
+// ------------------------------------------------------------------
+export const FACTORY_SESSION_COOKIE = "marsel_factory_session";
+export const FACTORY_SESSION_DURATION_SECONDS = 7 * 24 * 60 * 60; // 7 days convenience for factory tablet
+
+function getFactorySecretKey(): string {
+  return process.env.FACTORY_PASSCODE || "marsel-prod-9821";
+}
+
+export function verifyFactoryPasscode(passcode: string): boolean {
+  if (!passcode) return false;
+  const secret = getFactorySecretKey();
+  return passcode.trim() === secret.trim();
+}
+
+export async function createFactorySessionToken(): Promise<string> {
+  const secret = getFactorySecretKey();
+  const expiresAt = Date.now() + FACTORY_SESSION_DURATION_SECONDS * 1000;
+  const payload = `factory_${expiresAt}`;
+  const signature = await hmacSha256(payload, secret);
+  return `${payload}.${signature}`;
+}
+
+export async function verifyFactorySessionToken(token: string | null | undefined): Promise<boolean> {
+  if (!token) return false;
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+
+  const [payload, signature] = parts;
+  if (!payload.startsWith("factory_")) return false;
+
+  const expiresAt = Number(payload.replace("factory_", ""));
+  if (isNaN(expiresAt) || Date.now() > expiresAt) {
+    return false;
+  }
+
+  const secret = getFactorySecretKey();
+  const expectedSignature = await hmacSha256(payload, secret);
+  return signature === expectedSignature;
 }

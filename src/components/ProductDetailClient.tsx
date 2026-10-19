@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import ProductCard from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
@@ -125,11 +125,19 @@ export default function ProductDetailClient({
   const [openSection, setOpenSection] = useState<string>("details");
 
   const gallery = getGalleryImages(product);
+  const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Duplicate slides if exactly 2 images so Embla has sufficient buffer to loop infinitely without jitter
+  const slides = useMemo(() => {
+    if (gallery.length === 2) return [...gallery, ...gallery];
+    return gallery;
+  }, [gallery]);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
-    loop: true,
+    loop: gallery.length > 1,
     duration: 25,
     skipSnaps: false,
+    dragFree: false,
   });
 
   useEffect(() => {
@@ -141,7 +149,10 @@ export default function ProductDetailClient({
 
   useEffect(() => {
     if (!emblaApi) return;
-    const syncActiveImage = () => setActiveImage(emblaApi.selectedScrollSnap());
+    const syncActiveImage = () => {
+      const snap = emblaApi.selectedScrollSnap();
+      setActiveImage(snap % gallery.length);
+    };
     syncActiveImage();
     emblaApi.on("select", syncActiveImage);
     emblaApi.on("reInit", syncActiveImage);
@@ -150,6 +161,35 @@ export default function ProductDetailClient({
       emblaApi.off("reInit", syncActiveImage);
     };
   }, [emblaApi, gallery.length]);
+
+  const handleThumbnailClick = (index: number) => {
+    if (!emblaApi) return;
+    const currentSnap = emblaApi.selectedScrollSnap();
+    const currentActive = currentSnap % gallery.length;
+    if (currentActive === index) return;
+
+    if (gallery.length === 2) {
+      if (index === 1 && currentActive === 0) {
+        emblaApi.scrollNext();
+      } else if (index === 0 && currentActive === 1) {
+        emblaApi.scrollPrev();
+      } else {
+        emblaApi.scrollTo(index);
+      }
+    } else {
+      emblaApi.scrollTo(index);
+    }
+  };
+
+  useEffect(() => {
+    if (thumbnailRefs.current[activeImage]) {
+      thumbnailRefs.current[activeImage]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [activeImage]);
 
   const handleAddToCart = () => {
     if (!selectedSize) return;
@@ -235,40 +275,51 @@ export default function ProductDetailClient({
       {/* 1. TOP HERO SECTION: Perfectly fits desktop screen height alongside header + breadcrumb with ZERO scroll */}
       <section className="pt-1 pb-4 lg:pb-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-stretch h-auto lg:h-[calc(100vh-6.5rem)] lg:min-h-[560px] lg:max-h-[820px]">
         {/* Left: Gallery (Thumbnails + Natural Draggable Carousel) */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3 min-h-0 h-[60vh] sm:h-[70vh] lg:h-full min-w-0">
-          {/* Vertical Thumbnails */}
-          <div className="flex sm:flex-col gap-2 shrink-0 overflow-x-auto sm:overflow-y-auto sm:overflow-x-visible max-h-full">
-            {gallery.map((src, index) => (
-              <button
-                key={`${src}-${index}`}
-                type="button"
-                onClick={() => emblaApi?.scrollTo(index)}
-                aria-label={`View image ${index + 1}`}
-                className={`w-14 h-14 sm:w-16 sm:h-16 border p-1 flex items-center justify-center cursor-pointer transition-colors shrink-0 ${
-                  activeImage === index
-                    ? "border-black bg-black/5"
-                    : "border-black/15 hover:border-black/50"
-                }`}
-              >
-                <img
-                  src={src}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="max-h-full max-w-full object-contain"
-                />
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-col sm:flex-row gap-3 min-h-0 h-[48vh] sm:h-[60vh] lg:h-full min-w-0">
+          {/* Thumbnails: Bottom on mobile (order-2), Left on desktop (sm:order-1) */}
+          {gallery.length > 1 && (
+            <div className="order-2 sm:order-1 flex sm:flex-col gap-2 shrink-0">
+              {gallery.map((src, index) => {
+                const isActive = activeImage === index;
+                return (
+                  <button
+                    key={`${src}-${index}`}
+                    ref={(el) => {
+                      thumbnailRefs.current[index] = el;
+                    }}
+                    type="button"
+                    onClick={() => handleThumbnailClick(index)}
+                    aria-label={`View image ${index + 1}`}
+                    className={`w-12 h-12 sm:w-16 sm:h-16 border p-1 flex items-center justify-center cursor-pointer transition-colors shrink-0 bg-transparent ${
+                      isActive
+                        ? "border-black"
+                        : "border-black/20 hover:border-black/50"
+                    }`}
+                  >
+                    <img
+                      src={src}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="max-h-full max-w-full object-contain pointer-events-none"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-          {/* Main Visual Display: Smooth, Natural Draggable Carousel */}
-          <div className="relative flex-1 min-w-0 h-full border border-black/15 bg-black/[0.02]">
+          {/* Main Visual Display: Perfectly contained, no scrollbars, infinite loop */}
+          <div className="order-1 sm:order-2 relative flex-1 min-w-0 min-h-0 h-full border border-black/15 bg-black/[0.02] overflow-hidden select-none">
             <div
               ref={emblaRef}
-              className="w-full h-full overflow-hidden touch-pan-y cursor-grab active:cursor-grabbing"
+              className="w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
             >
-              <div className="flex h-full w-full">
-                {gallery.map((src, index) => (
+              <div
+                className="flex h-full"
+                style={{ touchAction: "pan-y pinch-zoom" }}
+              >
+                {slides.map((src, index) => (
                   <div
                     key={`${src}-${index}`}
                     className="min-w-0 flex-[0_0_100%] h-full flex items-center justify-center p-2 sm:p-4 select-none"
@@ -278,7 +329,7 @@ export default function ProductDetailClient({
                       alt={product.title}
                       draggable={false}
                       decoding="async"
-                      className="w-full h-full object-contain select-none"
+                      className="w-full h-full object-contain pointer-events-none select-none"
                       fetchPriority={index === 0 ? "high" : undefined}
                     />
                   </div>

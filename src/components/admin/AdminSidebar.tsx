@@ -67,9 +67,13 @@ export default function AdminSidebar() {
     <>
       {/* Mobile Header Bar */}
       <div className="lg:hidden fixed top-0 inset-x-0 h-14 bg-[#e7ecea] border-b border-black/30 text-black z-40 flex items-center justify-between px-5">
-        <div className="flex items-center gap-2">
-          <span className="font-bold tracking-widest text-sm uppercase">marsel</span>
-          <span className="text-[10px] text-black/60 uppercase font-medium">ADMIN</span>
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/logo/Black-without-bg.png"
+            alt="MARSEL"
+            className="h-5 w-auto object-contain"
+          />
+          <span className="text-[10px] text-black/60 uppercase font-bold tracking-wider">ADMIN</span>
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -95,11 +99,15 @@ export default function AdminSidebar() {
       >
         <div className="p-6 sm:p-8 overflow-y-auto flex-1">
           {/* Brand Title */}
-          <div className="border-b border-black/20 pb-6 mb-8">
-            <Link href="/admin" className="text-xl font-bold tracking-[0.2em] uppercase block hover:opacity-75 transition-opacity">
-              marsel
+          <div className="border-b border-black/20 pb-5 mb-8">
+            <Link href="/admin" className="block w-full hover:opacity-75 transition-opacity">
+              <img
+                src="/logo/Black-without-bg.png"
+                alt="MARSEL"
+                className="w-full h-auto max-h-12 object-contain"
+              />
             </Link>
-            <span className="text-[11px] text-black/60 uppercase tracking-widest font-normal mt-1 block">
+            <span className="text-[10px] text-black/50 uppercase tracking-[0.25em] font-semibold mt-3 block text-center">
               STUDIO DASHBOARD
             </span>
           </div>

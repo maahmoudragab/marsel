@@ -13,7 +13,6 @@
 html {
   background-color: #e7ecea !important;
   color: #000000 !important;
-  scroll-behavior: smooth;
   scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -27,9 +26,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+  overflow-x: clip;
 }
 
 /* Arabic Cairo font overrides */

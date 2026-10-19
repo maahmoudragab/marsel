@@ -76,7 +76,7 @@ export default async function ProductDetailPage({
       <Header />
 
       <main className="max-w-[1700px] mx-auto px-4 sm:px-8">
-        <div className="pt-2 pb-2">
+        <div className="relative z-10 py-2.5 sm:py-2">
           <nav className="text-[11px] font-mono uppercase tracking-wider text-black/50 flex items-center gap-1.5 flex-wrap">
             <Link href="/" className="hover:text-black transition-colors font-mono">marsel</Link>
             <span>/</span>

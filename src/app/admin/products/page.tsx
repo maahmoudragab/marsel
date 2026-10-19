@@ -74,16 +74,22 @@ const DEFAULT_PANTS_SIZING: SizingRow[] = [
   { size: "XXL", chest: "90", length: "112", shoulder: "36", sleeve: "30" },
 ];
 
-const PRESET_COLORS: [string, string][] = [
+export const PRESET_COLORS: [string, string][] = [
   ["Washed Black", "#171717"],
   ["Midnight Black", "#0B0D0D"],
-  ["Concrete Grey", "#8B8C87"],
+  ["Pure White", "#FFFFFF"],
   ["Off White", "#E8E4DA"],
+  ["Concrete Grey", "#8B8C87"],
+  ["Heather Grey", "#A6A6A6"],
   ["Desert Sand", "#C9B89A"],
+  ["Warm Beige", "#D7C4B7"],
+  ["Chocolate Brown", "#3E2723"],
   ["Forest Green", "#263A32"],
-  ["Nile Blue", "#183B56"],
   ["Vintage Olive", "#3D4434"],
+  ["Nile Navy", "#183B56"],
+  ["Royal Blue", "#1A237E"],
   ["Burgundy", "#3B1E2B"],
+  ["Crimson Red", "#8B0000"],
 ];
 
 // Helper component: Clean input with dropdown arrow to select existing options or type custom
@@ -263,6 +269,8 @@ export default function AdminProductsPage() {
   const [newCustomSizeInput, setNewCustomSizeInput] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const printFileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPrint, setUploadingPrint] = useState(false);
 
   // Extract unique options from DB for autocomplete
   const dynamicOptions = useMemo(() => {
@@ -442,6 +450,7 @@ export default function AdminProductsPage() {
       provenance: p.provenance || "EGYPT",
       house_label: p.house_label || "MARSEL",
       tags: p.tags || [],
+      print_file_url: p.print_file_url || "",
       is_active: p.is_active !== false,
     });
     setTagsText((p.tags || []).join(", "));
@@ -454,6 +463,7 @@ export default function AdminProductsPage() {
     setNewCustomSizeInput("");
 
     if (p.compare_at_price && p.compare_at_price > p.price) {
+      setForm((prev) => ({ ...prev, price: p.compare_at_price || p.price }));
       setDiscountType("fixed");
       setDiscountInput(String(p.compare_at_price - p.price));
     } else {
@@ -496,6 +506,7 @@ export default function AdminProductsPage() {
       provenance: p.provenance || "EGYPT",
       house_label: p.house_label || "MARSEL",
       tags: p.tags?.length ? [...p.tags] : [],
+      print_file_url: p.print_file_url || "",
       is_active: true,
     });
     setTagsText((p.tags || []).join(", "));
@@ -634,15 +645,43 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handlePrintFileSelected = async (fileList: FileList | null) => {
+    if (!fileList || !fileList.length) return;
+    const file = fileList[0];
+    if (!file.type.startsWith("image/")) {
+      setSubmitError("Design print file must be an image (PNG recommended).");
+      return;
+    }
+    setUploadingPrint(true);
+    setSubmitError("");
+    try {
+      const uploadedUrl = await uploadProductImageFile(file);
+      setField("print_file_url", uploadedUrl);
+      setSuccessToast("Print design image uploaded successfully");
+    } catch (err) {
+      console.error(err);
+      setSubmitError("Failed to upload print design file. Please try again.");
+    } finally {
+      setUploadingPrint(false);
+      if (printFileInputRef.current) printFileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemovePrintFile = () => {
+    setField("print_file_url", "");
+  };
+
   // Pricing calculations
+  // User enters Original Base Price first, then chooses discount (% or EGP), and final price is deducted.
   const priceMath = useMemo(() => {
-    const base = Number(form.price) || 0;
+    const originalPrice = Number(form.price) || 0;
     const inputVal = parseFloat(discountInput) || 0;
 
-    if (discountType === "none" || inputVal <= 0 || base <= 0) {
+    if (discountType === "none" || inputVal <= 0 || originalPrice <= 0) {
       return {
         hasDiscount: false,
-        finalPrice: base,
+        originalPrice: originalPrice,
+        finalPrice: originalPrice,
         comparePrice: null,
         discountAmount: 0,
         discountPercent: 0,
@@ -651,26 +690,28 @@ export default function AdminProductsPage() {
 
     if (discountType === "percent") {
       const percent = Math.min(99, Math.max(1, inputVal));
-      const comparePrice = Math.round(base / (1 - percent / 100));
-      const diff = comparePrice - base;
+      const discountAmount = Math.round((originalPrice * percent) / 100);
+      const finalPrice = Math.max(0, originalPrice - discountAmount);
       return {
         hasDiscount: true,
-        finalPrice: base,
-        comparePrice,
-        discountAmount: diff,
+        originalPrice: originalPrice,
+        finalPrice: finalPrice,
+        comparePrice: originalPrice,
+        discountAmount: discountAmount,
         discountPercent: Math.round(percent),
       };
     }
 
-    // fixed amount
-    const diff = inputVal;
-    const comparePrice = base + diff;
-    const percent = Math.round((diff / comparePrice) * 100);
+    // fixed amount discount (EGP off)
+    const discountAmount = Math.min(originalPrice - 1, inputVal);
+    const finalPrice = Math.max(0, originalPrice - discountAmount);
+    const percent = Math.round((discountAmount / originalPrice) * 100);
     return {
       hasDiscount: true,
-      finalPrice: base,
-      comparePrice,
-      discountAmount: diff,
+      originalPrice: originalPrice,
+      finalPrice: finalPrice,
+      comparePrice: originalPrice,
+      discountAmount: discountAmount,
       discountPercent: percent,
     };
   }, [form.price, discountType, discountInput]);
@@ -717,6 +758,7 @@ export default function AdminProductsPage() {
       const payload: ProductInput = {
         ...form,
         title: form.title.trim().toUpperCase(),
+        price: priceMath.finalPrice,
         compare_at_price: priceMath.comparePrice,
         discount_label: priceMath.hasDiscount ? `${priceMath.discountPercent}% OFF` : "",
         size_guide: serializedGuide,
@@ -1248,25 +1290,52 @@ export default function AdminProductsPage() {
                     />
 
                     <div>
-                      <ComboboxInput
-                        label="Color Name"
-                        required
+                      <label className={labelClass}>
+                        Product Color / اللون <span className="text-red-700">*</span>
+                      </label>
+
+                      {/* 15 Ready Fixed Colors Dropdown */}
+                      <select
                         value={form.color_name}
-                        options={dynamicOptions.colors}
-                        onChange={(val) => setField("color_name", val)}
-                        placeholder="e.g. Washed Black"
-                      />
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] font-bold uppercase text-black/60">Color Hex:</span>
-                        <input
-                          type="color"
-                          value={form.color_hex || "#111111"}
-                          onChange={(e) => setField("color_hex", e.target.value)}
-                          className="w-6 h-6 p-0 border border-black/30 cursor-pointer"
-                        />
-                        <span className="text-xs font-mono uppercase text-black/70">
-                          {form.color_hex || "#111111"}
-                        </span>
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setField("color_name", val);
+                          const matched = PRESET_COLORS.find(([name]) => name === val);
+                          if (matched) {
+                            setField("color_hex", matched[1]);
+                          }
+                        }}
+                        className={fieldClass + " font-medium"}
+                      >
+                        <option value="">-- اختر لون القطعة من الـ 15 لون الأساسيين --</option>
+                        {PRESET_COLORS.map(([name, hex]) => (
+                          <option key={name} value={name}>
+                            {name} ({hex})
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Visual Swatch Indicator & Custom Hex if needed */}
+                      <div className="flex items-center justify-between gap-2 mt-2 p-2 bg-black/5 border border-black/10">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-6 h-6 rounded-full border border-black/30 shadow-xs shrink-0"
+                            style={{ backgroundColor: form.color_hex || "#171717" }}
+                          />
+                          <span className="text-xs font-bold font-mono uppercase text-black">
+                            {form.color_name || "لم يتم اختيار لون"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-mono">
+                          <span className="text-[10px] text-black/50">HEX:</span>
+                          <input
+                            type="text"
+                            value={form.color_hex || ""}
+                            onChange={(e) => setField("color_hex", e.target.value)}
+                            placeholder="#171717"
+                            className="w-20 text-[11px] font-mono uppercase border border-black/25 bg-white px-1.5 py-0.5 text-center"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1281,16 +1350,16 @@ export default function AdminProductsPage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {/* Base Selling Price */}
+                      {/* Base Original Price */}
                       <div>
                         <label className={labelClass}>
-                          Selling Price (EGP) <span className="text-red-700">*</span>
+                          السعر الأساسي / Base Price (EGP) <span className="text-red-700">*</span>
                         </label>
                         <input
                           type="number"
                           required
                           min="1"
-                          placeholder="e.g. 1000"
+                          placeholder="مثلاً: 1200"
                           value={form.price || ""}
                           onChange={(e) => setField("price", Number(e.target.value))}
                           className={fieldClass + " font-mono font-bold text-sm"}
@@ -1299,15 +1368,15 @@ export default function AdminProductsPage() {
 
                       {/* Discount Options Mode */}
                       <div>
-                        <label className={labelClass}>Discount Option</label>
+                        <label className={labelClass}>نوع الخصم / Discount Type</label>
                         <select
                           value={discountType}
                           onChange={(e) => setDiscountType(e.target.value as "none" | "percent" | "fixed")}
                           className={fieldClass}
                         >
-                          <option value="none">No Discount</option>
-                          <option value="percent">Percentage Discount (% OFF)</option>
-                          <option value="fixed">Fixed Amount (EGP OFF)</option>
+                          <option value="none">بدون خصم (No Discount)</option>
+                          <option value="percent">نسبة مئوية من السعر (% OFF)</option>
+                          <option value="fixed">مبلغ مالي مخصوم (EGP OFF)</option>
                         </select>
                       </div>
 
@@ -1315,12 +1384,12 @@ export default function AdminProductsPage() {
                       {discountType !== "none" && (
                         <div>
                           <label className={labelClass}>
-                            {discountType === "percent" ? "Percentage (%):" : "Discount Amount (EGP):"}
+                            {discountType === "percent" ? "نسبة الخصم (%):" : "قيمة الخصم (EGP):"}
                           </label>
                           <input
                             type="number"
                             min="1"
-                            placeholder={discountType === "percent" ? "e.g. 20" : "e.g. 200"}
+                            placeholder={discountType === "percent" ? "مثلاً: 20" : "مثلاً: 200"}
                             value={discountInput}
                             onChange={(e) => setDiscountInput(e.target.value)}
                             className={fieldClass + " font-mono"}
@@ -1333,25 +1402,25 @@ export default function AdminProductsPage() {
                     {priceMath.hasDiscount && (
                       <div className="border border-black/15 bg-black/[0.03] p-3 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                         <div>
-                          <span className="text-[10px] uppercase font-bold text-black/40 block">Original Was</span>
+                          <span className="text-[10px] uppercase font-bold text-black/40 block">السعر الأساسي قبل الخصم</span>
                           <span className="font-mono text-xs line-through text-black/60 font-semibold">
-                            {priceMath.comparePrice?.toLocaleString()} EGP
+                            {priceMath.originalPrice?.toLocaleString()} EGP
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] uppercase font-bold text-black/40 block">Discount</span>
+                          <span className="text-[10px] uppercase font-bold text-black/40 block">نسبة الخصم</span>
                           <span className="font-mono text-xs font-bold text-red-700">
                             -{priceMath.discountPercent}%
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] uppercase font-bold text-black/40 block">Customer Saves</span>
+                          <span className="text-[10px] uppercase font-bold text-black/40 block">قيمة التوفير للعميل</span>
                           <span className="font-mono text-xs font-bold text-black">
                             {priceMath.discountAmount.toLocaleString()} EGP
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] uppercase font-bold text-black/40 block">Final Selling Price</span>
+                          <span className="text-[10px] uppercase font-bold text-black/40 block">سعر البيع النهائي</span>
                           <span className="font-mono text-sm font-bold text-emerald-800">
                             {priceMath.finalPrice.toLocaleString()} EGP
                           </span>
@@ -1471,6 +1540,90 @@ export default function AdminProductsPage() {
                         />
                       </label>
                     )}
+                  </div>
+
+                  {/* FACTORY PRINT DESIGN FILE (صورة الديزاين للمصنع) */}
+                  <div className="border border-black/20 bg-black/[0.02] p-4 mt-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-black/10 pb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-black">
+                            ملف / صورة الديزاين للطباعة (Factory Print Design)
+                          </span>
+                          <span className="text-[10px] bg-black text-[#e7ecea] px-1.5 py-0.5 font-bold uppercase">
+                            خاص بالمصنع
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-black/60 mt-0.5">
+                          ارفع صورة الديزاين بجودة أصلية (PNG مفرغ) عشان تظهر للمصنع ويحملها مباشرة للطباعة.
+                        </p>
+                      </div>
+
+                      {form.print_file_url && (
+                        <button
+                          type="button"
+                          onClick={handleRemovePrintFile}
+                          className="text-xs text-red-700 hover:underline font-bold cursor-pointer"
+                        >
+                          حذف الديزاين
+                        </button>
+                      )}
+                    </div>
+
+                    {form.print_file_url ? (
+                      <div className="flex items-center gap-4 p-3 bg-white border border-black/15">
+                        <div className="w-16 h-16 border border-black/20 bg-[radial-gradient(#000_1px,transparent_1px)] bg-[size:8px_8px] flex items-center justify-center overflow-hidden shrink-0">
+                          <img
+                            src={form.print_file_url}
+                            alt="Design Print PNG"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 text-xs">
+                          <p className="font-bold text-black uppercase truncate">تم رفع صورة الديزاين بنجاح</p>
+                          <a
+                            href={form.print_file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-blue-700 underline truncate block mt-0.5"
+                          >
+                            معاينة الصورة الأصلية ↗
+                          </a>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => printFileInputRef.current?.click()}
+                          disabled={uploadingPrint}
+                          className="px-3 py-1.5 border border-black/30 hover:border-black text-xs font-bold uppercase bg-white cursor-pointer"
+                        >
+                          {uploadingPrint ? "جاري الرفع..." : "تغيير الصورة"}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-white border border-dashed border-black/30">
+                        <div className="text-xs text-black/70">
+                          <span className="font-bold block text-black">لم يتم رفع صورة الديزاين بعد</span>
+                          <span>الصيغ المدعومة: PNG عالي الجودة بخلفية شفافة</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => printFileInputRef.current?.click()}
+                          disabled={uploadingPrint}
+                          className="px-4 py-2 bg-black text-[#e7ecea] hover:bg-black/85 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shrink-0"
+                        >
+                          {uploadingPrint ? "جاري الرفع..." : "+ رفع صورة الديزاين (PNG)"}
+                        </button>
+                      </div>
+                    )}
+
+                    <input
+                      ref={printFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingPrint}
+                      onChange={(e) => handlePrintFileSelected(e.target.files)}
+                      className="hidden"
+                    />
                   </div>
                 </div>
               </CollapsibleSection>

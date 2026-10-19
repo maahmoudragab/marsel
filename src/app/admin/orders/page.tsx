@@ -260,7 +260,8 @@ Total to Collect (COD): ${Number(order.total_amount).toLocaleString()} EGP`.trim
     return {
       all: orders.length,
       pending: orders.filter((o) => o.status === "pending").length,
-      processing: orders.filter((o) => o.status === "processing" || o.status === "confirmed").length,
+      confirmed: orders.filter((o) => o.status === "confirmed").length,
+      processing: orders.filter((o) => o.status === "processing").length,
       out_for_delivery: orders.filter((o) => o.status === "out_for_delivery").length,
       delivered: orders.filter((o) => o.status === "delivered").length,
       cancelled: orders.filter((o) => o.status === "cancelled").length,
@@ -270,9 +271,7 @@ Total to Collect (COD): ${Number(order.total_amount).toLocaleString()} EGP`.trim
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       let matchesFilter = true;
-      if (activeFilter === "processing") {
-        matchesFilter = order.status === "processing" || order.status === "confirmed";
-      } else if (activeFilter !== "all") {
+      if (activeFilter !== "all") {
         matchesFilter = order.status === activeFilter;
       }
 
@@ -342,6 +341,7 @@ Total to Collect (COD): ${Number(order.total_amount).toLocaleString()} EGP`.trim
           {[
             { id: "all", label: "All", count: statusCounts.all },
             { id: "pending", label: "Pending", count: statusCounts.pending },
+            { id: "confirmed", label: "Confirmed", count: statusCounts.confirmed },
             { id: "processing", label: "Processing", count: statusCounts.processing },
             { id: "out_for_delivery", label: "Out for Delivery", count: statusCounts.out_for_delivery },
             { id: "delivered", label: "Delivered", count: statusCounts.delivered },
@@ -569,6 +569,7 @@ Total to Collect (COD): ${Number(order.total_amount).toLocaleString()} EGP`.trim
                                 {(
                                   [
                                     "pending",
+                                    "confirmed",
                                     "processing",
                                     "out_for_delivery",
                                     "delivered",

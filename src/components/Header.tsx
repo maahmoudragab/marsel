@@ -20,9 +20,13 @@ export default function Header() {
           <div className="flex-1 sm:flex-initial text-left sm:text-center">
             <Link
               href="/"
-              className="text-lg sm:text-xl font-bold tracking-[0.2em] uppercase text-black hover:opacity-70 transition-opacity"
+              className="inline-flex items-center justify-center hover:opacity-75 transition-opacity"
             >
-              marsel
+              <img
+                src="/logo/Black-without-bg.png"
+                alt="MARSEL"
+                className="h-5 sm:h-7.5 w-auto max-w-[200px] sm:max-w-none object-contain"
+              />
             </Link>
           </div>
 
