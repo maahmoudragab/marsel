@@ -8,6 +8,10 @@ import { getCheckoutDataServer } from "@/lib/serverCheckout";
 export const metadata: Metadata = {
   title: "Checkout | MARSEL",
   description: "Secure checkout and direct cash on delivery across Egypt with MARSEL.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 // Force dynamic rendering so offers and coupons are evaluated in real-time

@@ -18,6 +18,10 @@ export async function generateMetadata({
   return {
     title: `Confirm Order ${cleanNumber} | MARSEL STORE`,
     description: "Review order details and confirm delivery at MARSEL STORE.",
+    robots: {
+      index: false,
+      follow: false,
+    },
   };
 }
 
