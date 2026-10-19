@@ -316,3 +316,40 @@ export function getFaqSchema() {
     ],
   };
 }
+
+/**
+ * 5. BreadcrumbList Schema for Google Search URL Hierarchies
+ */
+export function getBreadcrumbSchema(items: { name: string; url: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url.startsWith("http") ? item.url : `${SITE_URL}${item.url}`,
+    })),
+  };
+}
+
+/**
+ * 6. ItemList Schema for Product Grid Carousel in Google Search
+ */
+export function getItemListSchema(
+  products: { id: string; title: string; slug?: string | null }[]
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "MARSEL Streetwear Collection (كولكشن مارسيل)",
+    url: SITE_URL,
+    itemListElement: products.map((prod, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `${SITE_URL}/products/${prod.slug || prod.id}`,
+      name: prod.title,
+    })),
+  };
+}
+

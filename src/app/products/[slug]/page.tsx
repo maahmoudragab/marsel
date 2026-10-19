@@ -98,8 +98,13 @@ export default async function ProductDetailPage({
   }
 
   const recommendations = await getRecommendationsServer(product);
-  const { getProductSchema } = await import("@/lib/seo");
+  const { getProductSchema, getBreadcrumbSchema } = await import("@/lib/seo");
   const productSchema = getProductSchema(product);
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: "Home (الرئيسية)", url: "/" },
+    { name: product.category ? `${product.category.toUpperCase()} (ملابس)` : "Clothing", url: "/" },
+    { name: product.title, url: `/products/${product.slug || product.id}` },
+  ]);
 
   return (
     <div className="min-h-screen bg-[#e7ecea] text-black">
@@ -107,6 +112,11 @@ export default async function ProductDetailPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      {/* Google Breadcrumb Hierarchy Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
       <Header />

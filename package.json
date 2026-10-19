@@ -14,6 +14,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@next/third-parties": "^16.4.2",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.3",
     "embla-carousel-react": "^8.6.0",
@@ -21,7 +22,8 @@
     "next": "^16.4.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "schema-dts": "^2.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

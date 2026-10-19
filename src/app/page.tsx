@@ -60,9 +60,17 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const products = await getProductsServer();
+  const { getItemListSchema } = await import("@/lib/seo");
+  const itemListSchema = getItemListSchema(products);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#e7ecea] text-black">
+      {/* Google Products Carousel Schema (ItemList) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+
       {/* Header */}
       <Header />
 

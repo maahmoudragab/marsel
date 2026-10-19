@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { supreme, cairo } from "./fonts";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import {
   SITE_URL,
   BRAND_KEYWORDS,
@@ -122,6 +123,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-[#e7ecea] text-black">
         <Providers>{children}</Providers>
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        )}
       </body>
     </html>
   );
