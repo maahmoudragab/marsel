@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, CheckCircle, Package, Truck, Home, AlertCircle, MessageCircle } from "lucide-react";
+import { getWhatsAppUrl } from "@/config/brand";
 
 interface TrackedOrderItem {
   id: string;
@@ -295,9 +296,9 @@ export default function TrackOrderClient() {
               {/* Concierge Contact pill */}
               <div className="pt-2">
                 <a
-                  href={`https://wa.me/20109542463?text=${encodeURIComponent(
+                  href={getWhatsAppUrl(
                     `Hello MARSEL! I'm tracking Order #${order.order_number} and have a delivery inquiry.`
-                  )}`}
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-black hover:opacity-70 transition-opacity"

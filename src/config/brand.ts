@@ -14,23 +14,24 @@ export const BRAND_CONFIG = {
 
   contact: {
     // Primary customer service phone
-    phone: "0109542463",
+    phone: "01095420463",
     // International WhatsApp number (country code + number, digits only)
-    whatsappNumber: "0109542463",
+    whatsappNumber: "01095420463",
     // Formatted display phone
-    displayPhone: "0109542463",
+    displayPhone: "01095420463",
     // Concierge & support email
     email: "concierge@marsel.studio",
   },
 
   social: {
     whatsapp: {
-      number: "0109542463",
-      url: "https://wa.me/0109542463",
+      number: "01095420463",
+      username: "marselrg",
+      url: "https://wa.me/201095420463",
     },
     instagram: {
-      handle: "marsel.studio",
-      url: "https://instagram.com/marsel.studio",
+      handle: "marsel.eg",
+      url: "https://instagram.com/marsel.eg",
     },
     tiktok: {
       handle: "@marsel.eg",
