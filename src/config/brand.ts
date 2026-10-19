@@ -33,8 +33,8 @@ export const BRAND_CONFIG = {
       url: "https://instagram.com/marsel.studio",
     },
     tiktok: {
-      handle: "@marsel.studio",
-      url: "https://tiktok.com/@marsel.studio",
+      handle: "@marsel.eg",
+      url: "https://tiktok.com/@marsel.eg",
     },
     facebook: {
       handle: "marsel.studio",
