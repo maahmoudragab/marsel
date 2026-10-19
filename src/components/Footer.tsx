@@ -75,8 +75,18 @@ export default function Footer() {
           )}
         </nav>
 
-        <div className="text-[10px] text-black/50 uppercase tracking-widest pt-2">
-          © {new Date().getFullYear()} {BRAND_CONFIG.legalName}
+        {/* Editorial Brand Narrative for Google Indexing & Authority */}
+        <div className="border-t border-black/10 pt-8 mt-4 max-w-3xl mx-auto space-y-3 text-center">
+          <p className="text-[12px] font-semibold text-black/80 leading-relaxed uppercase tracking-wider">
+            MARSEL (مارسيل) — Independent Egyptian Streetwear Label founded by Mahmoud Ragab in Cairo
+          </p>
+          <p className="text-[11px] text-black/60 leading-relaxed max-w-2xl mx-auto">
+            براند ملابس ستريت وير مصري مستقل متخصص في تصنيع وتصميم الهوديز الأوفر سايز والملابس القطنية الثقيلة عالية الجودة (Heavyweight Hoodies & Boxy Fit Crewnecks). شحن وتوصيل ومعاينة قبل الاستلام لجميع محافظات مصر.
+          </p>
+        </div>
+
+        <div className="text-[10px] text-black/50 uppercase tracking-widest pt-4">
+          © {new Date().getFullYear()} {BRAND_CONFIG.legalName} • CAIRO, EGYPT • ALL RIGHTS RESERVED
         </div>
       </div>
     </footer>
