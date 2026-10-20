@@ -23,7 +23,7 @@ export const MAINTENANCE_CONFIG = {
   titleAr: "الكوليكشن الجديد قيد التجهيز",
   titleEn: "NEW COLLECTION DROPPING SOON",
   subtitleAr:
-    "شغالين بكل حب وتفاصيل دقيقة على تجهيز قطع وتشكيلة الكوليكشن الجديد عشان نقدملكم أعلى كواليتي تليق بيكم. الموقع مقفول مؤقتاً وقريباً جداً هينزل الكوليكشن وتتاح كل القطع للطلب!",
+    "شغالين بكل حب ومهتمين بأصغر وأدق التفاصيل عشان نقدملكم قطع وتشكيلة مختلفة تليق بيكم. الموقع هيفتح قريب جداً مع نزول الكوليكشن الجديد.",
   subtitleEn:
     "We are currently curating and finishing the new collection pieces. The store is temporarily closed and will reopen very soon for the drop.",
   ctaWhatsAppText: "بلّغني أول ما الكوليكشن ينزل",

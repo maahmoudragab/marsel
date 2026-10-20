@@ -4,7 +4,7 @@ import { BRAND_CONFIG } from "@/config/brand";
 
 export const metadata: Metadata = {
   title: "MARSEL | Dropping Soon",
-  description: "الكوليكشن الجديد قيد التجهيز وقريباً جداً هينزل.",
+  description: "الكوليكشن الجديد قيد التجهيز.. الموقع هيفتح قريب جداً.",
   robots: {
     index: true,
     follow: true,
@@ -37,7 +37,7 @@ export default function ComingSoonPage() {
           <p className="text-sm sm:text-base text-black/75 leading-relaxed max-w-lg mx-auto font-normal">
             شغالين بكل حب ومهتمين بأصغر وأدق التفاصيل عشان نقدملكم قطع وتشكيلة مختلفة تليق بيكم.
             <br className="hidden sm:inline" />
-            {" "}الموقع مقفول مؤقتاً وقريباً جداً هينزل الكوليكشن.
+            {" "}الموقع هيفتح قريب جداً مع نزول الكوليكشن الجديد.
           </p>
         </div>
       </main>
