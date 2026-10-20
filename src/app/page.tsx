@@ -64,7 +64,7 @@ export default async function HomePage() {
   const itemListSchema = getItemListSchema(products);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#e7ecea] text-black">
+    <div className="min-h-screen flex flex-col bg-[#f4f3f0] text-black">
       {/* Google Products Carousel Schema (ItemList) */}
       <script
         type="application/ld+json"
@@ -75,7 +75,7 @@ export default async function HomePage() {
       <Header />
 
       {/* Main Content: Products Grid directly rendered on the Server */}
-      <main className="flex-1 w-full max-w-[1700px] mx-auto px-4 sm:px-8 pt-3 sm:pt-4 pb-16">
+      <main className="flex-1 w-full max-w-[1550px] mx-auto px-4 sm:px-8 pt-3 sm:pt-4 pb-16">
         {/* Semantic H1 for Google Search Indexing & Screen Readers */}
         <h1 className="sr-only">
           MARSEL (مارسيل) — Independent Egyptian Streetwear Brand founded by Mahmoud Ragab in Cairo
@@ -88,7 +88,7 @@ export default async function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-[14px] sm:gap-x-[66px] gap-y-[36px] sm:gap-y-[72px] items-start">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-x-3.5 sm:gap-x-7 md:gap-x-9 gap-y-8 sm:gap-y-12 items-start">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

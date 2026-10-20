@@ -11,7 +11,7 @@ export default function Header() {
   return (
     <>
       <AnnouncementBanner />
-      <header className="sticky top-0 z-40 bg-[#e7ecea]/75 backdrop-blur-xl border-b border-black/15 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+      <header className="sticky top-0 z-40 bg-[#f4f3f0]/85 backdrop-blur-xl border-b border-black/10 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         <div className="max-w-[1700px] mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
           {/* Left balance spacer */}
           <div className="w-16 hidden sm:block" />

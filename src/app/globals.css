@@ -11,7 +11,7 @@
 }
 
 html {
-  background-color: #e7ecea !important;
+  background-color: #f4f3f0 !important;
   color: #000000 !important;
   scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
@@ -19,7 +19,7 @@ html {
 }
 
 body {
-  background-color: #e7ecea !important;
+  background-color: #f4f3f0 !important;
   color: #000000 !important;
   font-family: var(--font-supreme), monospace, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -83,5 +83,5 @@ select:focus {
 /* Card virtualization for ultra-smooth mobile scrolling */
 .product-card-container {
   content-visibility: auto;
-  contain-intrinsic-size: auto 340px;
+  contain-intrinsic-size: auto 420px;
 }
