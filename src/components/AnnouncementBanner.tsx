@@ -1,88 +1,53 @@
-"use client";
+import React from "react";
+import type { ParsedOffer } from "@/lib/offers";
 
-import React, { useEffect, useState } from "react";
-import { X, Sparkles } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
-import { parseOffer, type ParsedOffer, type RawOffer } from "@/lib/offers";
+interface AnnouncementBannerProps {
+  initialOffer: ParsedOffer | null;
+}
 
-export default function AnnouncementBanner() {
-  const [activeOffer, setActiveOffer] = useState<ParsedOffer | null>(null);
-  const [isDismissed, setIsDismissed] = useState(true); // default true until client check
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const fetchLiveBanner = async () => {
-      try {
-        const supabase = createClient();
-        const now = new Date().toISOString();
-
-        const { data, error } = await supabase
-          .from("offers")
-          .select("*")
-          .eq("is_active", true)
-          .lte("starts_at", now)
-          .gte("ends_at", now)
-          .order("priority", { ascending: false });
-
-        if (error || !data || data.length === 0) return;
-
-        const parsedOffers = (data as RawOffer[]).map(parseOffer);
-        const bannerOffer = parsedOffers.find((o) => o.showBanner && o.bannerText.trim());
-
-        if (bannerOffer) {
-          const storageKey = `marsel_dismissed_offer_${bannerOffer.id}`;
-          const alreadyDismissed = sessionStorage.getItem(storageKey);
-          if (!alreadyDismissed) {
-            setActiveOffer(bannerOffer);
-            setIsDismissed(false);
-          }
-        }
-      } catch (err) {
-        console.error("Announcement banner fetch error:", err);
-      }
-    };
-
-    fetchLiveBanner();
-  }, []);
-
-  const handleDismiss = () => {
-    if (activeOffer) {
-      sessionStorage.setItem(`marsel_dismissed_offer_${activeOffer.id}`, "true");
-    }
-    setIsDismissed(true);
-  };
-
-  if (!mounted || isDismissed || !activeOffer) {
+export default function AnnouncementBanner({ initialOffer }: AnnouncementBannerProps) {
+  if (!initialOffer) {
     return null;
   }
 
+  const displayText = initialOffer.bannerText?.trim() || initialOffer.title;
+  // Repeat the item enough times so the marquee loop is completely seamless
+  const repetitions = [0, 1, 2, 3, 4, 5, 6, 7];
+
   return (
     <aside
-      aria-label="Store Announcement"
-      className="bg-[#121313] text-[#f6f5f2] border-b border-white/10 text-xs py-2 px-3 sm:px-6 relative z-50 transition-all duration-300"
+      aria-label="Store Announcement Ticker"
+      className="w-full bg-black text-[#f6f5f2] border-b border-white/10 py-2 sm:py-2.5 relative z-50 select-none overflow-hidden"
     >
-      <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3">
-        {/* Left balance spacer */}
-        <div className="w-6 hidden sm:block" />
+      {/* Edge Soft Fades to Black */}
+      <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
 
-        {/* Banner Content */}
-        <div className="flex-1 text-center flex items-center justify-center gap-2 overflow-hidden">
-          <Sparkles className="w-3.5 h-3.5 text-[#f6f5f2]/70 shrink-0" />
-          <span className="font-semibold tracking-wider uppercase text-[11px] sm:text-xs truncate">
-            {activeOffer.bannerText || activeOffer.title}
-          </span>
+      {/* Infinite Scrolling Track */}
+      <div className="animate-marquee flex items-center">
+        {/* First Half */}
+        <div className="flex items-center shrink-0">
+          {repetitions.map((i) => (
+            <div key={`a-${i}`} className="flex items-center">
+              <span className="font-mono tracking-[0.22em] sm:tracking-[0.28em] uppercase text-[10px] sm:text-[11.5px] text-[#f6f5f2] font-medium whitespace-nowrap px-4 sm:px-6">
+                {displayText}
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-white/50 shrink-0 select-none inline-block mx-1 sm:mx-2" />
+            </div>
+          ))}
         </div>
 
-        {/* Dismiss Button */}
-        <button
-          type="button"
-          onClick={handleDismiss}
-          aria-label="Dismiss banner"
-          className="text-[#f6f5f2]/60 hover:text-white p-1 transition-colors cursor-pointer shrink-0"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+        {/* Second Identical Half for 0-gap seamless looping */}
+        <div className="flex items-center shrink-0" aria-hidden="true">
+          {repetitions.map((i) => (
+            <div key={`b-${i}`} className="flex items-center">
+              <span className="font-mono tracking-[0.22em] sm:tracking-[0.28em] uppercase text-[10px] sm:text-[11.5px] text-[#f6f5f2] font-medium whitespace-nowrap px-4 sm:px-6">
+                {displayText}
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-white/50 shrink-0 select-none inline-block mx-1 sm:mx-2" />
+            </div>
+          ))}
+        </div>
       </div>
     </aside>
   );

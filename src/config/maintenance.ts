@@ -11,8 +11,10 @@
  */
 
 export const MAINTENANCE_MODE =
-  process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" ||
-  process.env.MAINTENANCE_MODE === "true";
+  process.env.MAINTENANCE_MODE === "false" ||
+  process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "false"
+    ? false
+    : true;
 
 /**
  * بيانات ونصوص شاشة التجهيز

@@ -1,16 +1,15 @@
-"use client";
-
 import React from "react";
 import Link from "next/link";
-import { useCart } from "@/context/CartContext";
+import BagTrigger from "@/components/BagTrigger";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
+import { getActiveBannerServer } from "@/lib/serverOffers";
 
-export default function Header() {
-  const { totalCount, openDrawer } = useCart();
+export default async function Header() {
+  const bannerOffer = await getActiveBannerServer();
 
   return (
     <>
-      <AnnouncementBanner />
+      <AnnouncementBanner initialOffer={bannerOffer} />
       <header className="sticky top-0 z-40 bg-[#f6f5f2]/85 backdrop-blur-xl border-b border-black/10 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         <div className="max-w-[1700px] mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
           {/* Left balance spacer */}
@@ -32,15 +31,7 @@ export default function Header() {
 
           {/* Right - Bag Trigger */}
           <div className="w-auto sm:w-16 flex justify-end">
-            <button
-              type="button"
-              onClick={openDrawer}
-              aria-label="Open Shopping Bag"
-              className="text-xs sm:text-sm font-medium tracking-wide lowercase text-black hover:opacity-60 transition-opacity flex items-center gap-1 py-1 cursor-pointer bg-transparent border-0"
-            >
-              <span>bag</span>
-              <span className="text-black" suppressHydrationWarning>[{totalCount}]</span>
-            </button>
+            <BagTrigger />
           </div>
         </div>
       </header>
