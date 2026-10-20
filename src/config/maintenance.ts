@@ -1,0 +1,31 @@
+/**
+ * 🔒 MARSEL STORE — Maintenance & Collection Drop Control
+ * =========================================================
+ * يتم التحكم في القفل والفتح من خلال متغير البيئة في ملف .env.local
+ *
+ * 🔴 لقفل الموقع:
+ *    MAINTENANCE_MODE=true
+ *
+ * 🟢 لفتح الموقع وإلغاء القفل:
+ *    MAINTENANCE_MODE=false
+ */
+
+export const MAINTENANCE_MODE =
+  process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" ||
+  process.env.MAINTENANCE_MODE === "true";
+
+/**
+ * بيانات ونصوص شاشة التجهيز
+ */
+export const MAINTENANCE_CONFIG = {
+  badgeAr: "قيد التجهيز • إطلاق قريب جداً",
+  badgeEn: "DROP IN PROGRESS",
+  titleAr: "الكوليكشن الجديد قيد التجهيز",
+  titleEn: "NEW COLLECTION DROPPING SOON",
+  subtitleAr:
+    "شغالين بكل حب وتفاصيل دقيقة على تجهيز قطع وتشكيلة الكوليكشن الجديد عشان نقدملكم أعلى كواليتي تليق بيكم. الموقع مقفول مؤقتاً وقريباً جداً هينزل الكوليكشن وتتاح كل القطع للطلب!",
+  subtitleEn:
+    "We are currently curating and finishing the new collection pieces. The store is temporarily closed and will reopen very soon for the drop.",
+  ctaWhatsAppText: "بلّغني أول ما الكوليكشن ينزل",
+  ctaWhatsAppMessage: "مرحباً مارسيل، حابب اكون أول واحد يعرف أول ما الكوليكشن الجديد ينزل!",
+};

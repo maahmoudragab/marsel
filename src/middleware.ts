@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 import { ADMIN_SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { MAINTENANCE_MODE } from "@/config/maintenance";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -25,6 +26,52 @@ export async function middleware(request: NextRequest) {
       effectivePath = "/admin";
     } else if (!pathname.startsWith("/admin")) {
       effectivePath = `/admin${pathname}`;
+    }
+  }
+
+  // 1. Handle Maintenance Mode (🔒 قفل الموقع لحين نزول الكوليكشن من env)
+  const envMaintenance = process.env.MAINTENANCE_MODE ?? process.env.NEXT_PUBLIC_MAINTENANCE_MODE;
+  const isMaintenanceActive = envMaintenance !== undefined ? envMaintenance === "true" : MAINTENANCE_MODE;
+
+  if (isMaintenanceActive) {
+    const previewParam = request.nextUrl.searchParams.get("preview");
+    const hasPreviewCookie = request.cookies.get("marsel_preview")?.value === "1";
+    const hasAdminSession = Boolean(request.cookies.get(ADMIN_SESSION_COOKIE)?.value);
+
+    // Bypass check for admin previewing the store
+    const isBypassed =
+      previewParam === "marsel2026" ||
+      hasPreviewCookie ||
+      hasAdminSession;
+
+    const isExemptPath =
+      effectivePath.startsWith("/admin") ||
+      effectivePath.startsWith("/atelier-hub-9821") ||
+      effectivePath.startsWith("/api") ||
+      effectivePath === "/coming-soon" ||
+      effectivePath === "/robots.txt" ||
+      effectivePath === "/sitemap.xml";
+
+    if (!isExemptPath && !isBypassed) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/coming-soon";
+      return NextResponse.rewrite(url);
+    }
+
+    if (previewParam === "marsel2026") {
+      const response = NextResponse.next();
+      response.cookies.set("marsel_preview", "1", {
+        path: "/",
+        httpOnly: true,
+        maxAge: 60 * 60 * 24, // 24 hours
+        sameSite: "lax",
+      });
+      return response;
+    }
+  } else {
+    // If maintenance is OFF and someone visits /coming-soon, redirect to homepage
+    if (pathname === "/coming-soon") {
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
