@@ -64,7 +64,7 @@ export default async function HomePage() {
   const itemListSchema = getItemListSchema(products);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f4f3f0] text-black">
+    <div className="min-h-screen flex flex-col bg-[#f6f5f2] text-black">
       {/* Google Products Carousel Schema (ItemList) */}
       <script
         type="application/ld+json"

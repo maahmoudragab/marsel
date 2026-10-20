@@ -632,7 +632,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
             <div className="space-y-3 pt-2">
               <Link
                 href={`/track?order=${orderNumber}`}
-                className="w-full h-12 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors shadow-sm flex items-center justify-center gap-2"
+                className="w-full h-12 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors shadow-sm flex items-center justify-center gap-2"
               >
                 <span>Track Your Order Live →</span>
               </Link>
@@ -675,7 +675,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
             </p>
             <Link
               href="/"
-              className="inline-flex items-center justify-center h-12 px-8 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors shadow-sm mt-2"
+              className="inline-flex items-center justify-center h-12 px-8 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors shadow-sm mt-2"
             >
               Explore Drops
             </Link>
@@ -986,7 +986,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                           type="button"
                           onClick={handleApplyCoupon}
                           disabled={checkingCoupon || !couponCodeInput.trim()}
-                          className="h-11 px-5 border border-black bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-wider hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-40 rounded-none flex items-center justify-center shrink-0"
+                          className="h-11 px-5 border border-black bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-wider hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-40 rounded-none flex items-center justify-center shrink-0"
                         >
                           {checkingCoupon ? "..." : "Apply"}
                         </button>
@@ -1102,7 +1102,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       form="checkout-form"
                       onClick={handleSubmitOrder}
                       disabled={isSubmitting || !isFormValid}
-                      className="w-full h-12 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center justify-center"
+                      className="w-full h-12 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center justify-center"
                     >
                       {isSubmitting ? "Placing Order..." : `Place Order — ${finalOrderTotal.toLocaleString()} EGP`}
                     </button>

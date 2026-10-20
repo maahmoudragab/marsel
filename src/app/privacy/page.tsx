@@ -15,7 +15,7 @@ export default function PrivacyPage() {
   const whatsappContactUrl = getWhatsAppUrl("Hello MARSEL! I have an inquiry regarding privacy and my data.");
 
   return (
-    <div className="min-h-screen bg-[#e7ecea] text-black flex flex-col">
+    <div className="min-h-screen bg-[#f6f5f2] text-black flex flex-col">
       <Header />
 
       <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-8">
@@ -50,7 +50,7 @@ export default function PrivacyPage() {
               href={whatsappContactUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 h-11 px-6 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-wider hover:bg-black/85 transition-colors self-start sm:self-auto shrink-0 shadow-sm"
+              className="inline-flex items-center justify-center gap-2 h-11 px-6 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-wider hover:bg-black/85 transition-colors self-start sm:self-auto shrink-0 shadow-sm"
             >
               <span>Concierge Support →</span>
             </a>
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
           {/* Section 1: Information Collected (Full Width Box, 60% Text) */}
           <div className="w-full border border-black/20 bg-black/[0.015] p-6 sm:p-9 space-y-6">
             <div className="flex items-center gap-3 border-b border-black/10 pb-4">
-              <div className="w-8 h-8 border border-black bg-black text-[#e7ecea] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 border border-black bg-black text-[#f6f5f2] flex items-center justify-center shrink-0">
                 <UserCheck className="w-4 h-4" />
               </div>
               <h2 className="text-lg sm:text-xl font-bold uppercase text-black tracking-tight">
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
           {/* Section 2: How We Use Data (Full Width Box, 60% Text) */}
           <div className="w-full border border-black/20 bg-black/[0.015] p-6 sm:p-9 space-y-6">
             <div className="flex items-center gap-3 border-b border-black/10 pb-4">
-              <div className="w-8 h-8 border border-black bg-black text-[#e7ecea] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 border border-black bg-black text-[#f6f5f2] flex items-center justify-center shrink-0">
                 <Lock className="w-4 h-4" />
               </div>
               <h2 className="text-lg sm:text-xl font-bold uppercase text-black tracking-tight">
@@ -123,7 +123,7 @@ export default function PrivacyPage() {
           {/* Section 3: Zero Data Selling (Full Width Box, 60% Text) */}
           <div className="w-full border border-black/20 bg-black/[0.015] p-6 sm:p-9 space-y-6">
             <div className="flex items-center gap-3 border-b border-black/10 pb-4">
-              <div className="w-8 h-8 border border-black bg-black text-[#e7ecea] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 border border-black bg-black text-[#f6f5f2] flex items-center justify-center shrink-0">
                 <ShieldAlert className="w-4 h-4" />
               </div>
               <h2 className="text-lg sm:text-xl font-bold uppercase text-black tracking-tight">
@@ -142,7 +142,7 @@ export default function PrivacyPage() {
           {/* Section 4: Contact & Data Deletion (Full Width Box, 60% Text) */}
           <div className="w-full border border-black/20 bg-black/[0.015] p-6 sm:p-9 space-y-6">
             <div className="flex items-center gap-3 border-b border-black/10 pb-4">
-              <div className="w-8 h-8 border border-black bg-black text-[#e7ecea] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 border border-black bg-black text-[#f6f5f2] flex items-center justify-center shrink-0">
                 <MessageCircle className="w-4 h-4" />
               </div>
               <h2 className="text-lg sm:text-xl font-bold uppercase text-black tracking-tight">

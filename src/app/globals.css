@@ -11,7 +11,7 @@
 }
 
 html {
-  background-color: #f4f3f0 !important;
+  background-color: #f6f5f2 !important;
   color: #000000 !important;
   scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
@@ -19,7 +19,7 @@ html {
 }
 
 body {
-  background-color: #f4f3f0 !important;
+  background-color: #f6f5f2 !important;
   color: #000000 !important;
   font-family: var(--font-supreme), monospace, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -39,7 +39,7 @@ body {
 
 ::selection {
   background: #000000;
-  color: #e7ecea;
+  color: #f6f5f2;
 }
 
 /* Minimalist transparent scrollbar across the whole site */

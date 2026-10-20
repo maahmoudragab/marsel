@@ -316,7 +316,7 @@ export default function ConfirmOrderClient({ initialOrder }: { initialOrder: Ord
               <div className="pt-2">
                 <Link
                   href="/"
-                  className="inline-block px-5 py-2.5 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors"
+                  className="inline-block px-5 py-2.5 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors"
                 >
                   Return to Store
                 </Link>
@@ -328,7 +328,7 @@ export default function ConfirmOrderClient({ initialOrder }: { initialOrder: Ord
                 type="button"
                 onClick={handleConfirmOrder}
                 disabled={isConfirming || isCancelling}
-                className="w-full h-12 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-widest hover:bg-black/85 cursor-pointer shadow-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                className="w-full h-12 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 cursor-pointer shadow-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
               >
                 {isConfirming ? (
                   <span>Confirming Order...</span>

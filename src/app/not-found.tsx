@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#e7ecea] text-black flex flex-col">
+    <div className="min-h-screen bg-[#f6f5f2] text-black flex flex-col">
       <Header />
 
       <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-8">
@@ -28,7 +28,7 @@ export default function NotFound() {
           <div className="pt-4">
             <Link
               href="/"
-              className="inline-flex items-center justify-center h-12 px-8 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors shadow-sm"
+              className="inline-flex items-center justify-center h-12 px-8 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors shadow-sm"
             >
               Return to Store
             </Link>

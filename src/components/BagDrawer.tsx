@@ -71,7 +71,7 @@ export default function BagDrawer() {
           role="dialog"
           aria-modal="true"
           aria-label="Shopping Bag"
-          className={`w-screen max-w-md bg-[#e7ecea] text-black border-l border-black shadow-2xl flex flex-col justify-between pointer-events-auto transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+          className={`w-screen max-w-md bg-[#f6f5f2] text-black border-l border-black shadow-2xl flex flex-col justify-between pointer-events-auto transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
             isDrawerOpen ? "translate-x-0" : "translate-x-full"
           }`}
           style={{ willChange: "transform", backfaceVisibility: "hidden" }}
@@ -117,7 +117,7 @@ export default function BagDrawer() {
                 <button
                   type="button"
                   onClick={closeDrawer}
-                  className="px-5 py-2.5 border border-black text-xs font-semibold uppercase tracking-wider hover:bg-black hover:text-[#e7ecea] transition-colors cursor-pointer"
+                  className="px-5 py-2.5 border border-black text-xs font-semibold uppercase tracking-wider hover:bg-black hover:text-[#f6f5f2] transition-colors cursor-pointer"
                 >
                   Continue Shopping
                 </button>
@@ -198,7 +198,7 @@ export default function BagDrawer() {
 
           {/* Footer with Checkout CTA */}
           {items.length > 0 && (
-            <div className="border-t border-black/20 p-5 sm:p-6 space-y-4 bg-[#e7ecea]">
+            <div className="border-t border-black/20 p-5 sm:p-6 space-y-4 bg-[#f6f5f2]">
               {/* Subtotal */}
               <div className="space-y-1">
                 <div className="flex justify-between items-baseline text-xs font-semibold uppercase tracking-wider">
@@ -216,7 +216,7 @@ export default function BagDrawer() {
               <button
                 type="button"
                 onClick={handleCheckoutClick}
-                className="w-full py-3.5 bg-black text-[#e7ecea] text-xs font-semibold uppercase tracking-[0.2em] hover:bg-black/85 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-black text-[#f6f5f2] text-xs font-semibold uppercase tracking-[0.2em] hover:bg-black/85 transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="w-3.5 h-3.5" />

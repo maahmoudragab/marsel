@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function ComingSoonPage() {
   return (
-    <div className="min-h-screen bg-[#e7ecea] text-black flex flex-col justify-between selection:bg-black selection:text-[#e7ecea]">
+    <div className="min-h-screen bg-[#f6f5f2] text-black flex flex-col justify-between selection:bg-black selection:text-[#f6f5f2]">
       {/* Top Header: Brand Logo */}
       <header className="w-full py-8 sm:py-12 flex items-center justify-center px-6">
         <img

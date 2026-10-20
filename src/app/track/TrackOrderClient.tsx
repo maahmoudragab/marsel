@@ -164,7 +164,7 @@ export default function TrackOrderClient() {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 h-11 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-50 shrink-0 shadow-sm"
+            className="px-6 h-11 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-50 shrink-0 shadow-sm"
           >
             {loading ? "..." : "Track"}
           </button>
@@ -221,7 +221,7 @@ export default function TrackOrderClient() {
                         <div
                           className={`w-8 h-8 sm:w-10 sm:h-10 border flex items-center justify-center transition-colors ${
                             isCurrent
-                              ? "bg-black text-[#e7ecea] border-black"
+                              ? "bg-black text-[#f6f5f2] border-black"
                               : isDone
                               ? "bg-black/10 border-black text-black"
                               : "border-black/20 text-black/25 bg-transparent"

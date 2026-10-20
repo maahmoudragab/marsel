@@ -4,7 +4,7 @@ import { BRAND_CONFIG } from "@/config/brand";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-black/15 mt-20 py-10 px-4 sm:px-8 bg-[#f4f3f0]">
+    <footer className="border-t border-black/15 mt-20 py-10 px-4 sm:px-8 bg-[#f6f5f2]">
       <div className="max-w-[1700px] mx-auto flex flex-col items-center justify-center text-center space-y-4 text-black">
         <div className="flex items-center justify-center">
           <img

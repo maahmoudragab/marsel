@@ -32,7 +32,7 @@ export default function FaqPage() {
   const faqSchema = getFaqSchema();
 
   return (
-    <div className="min-h-screen bg-[#e7ecea] text-black flex flex-col">
+    <div className="min-h-screen bg-[#f6f5f2] text-black flex flex-col">
       {/* Google FAQ Structured Data (Rich Answers in Google Search) */}
       <script
         type="application/ld+json"

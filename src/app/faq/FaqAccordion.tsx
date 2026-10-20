@@ -168,7 +168,7 @@ export default function FaqAccordion() {
               href={whatsappContactUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 h-11 px-6 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-wider hover:bg-black/85 transition-colors shadow-sm"
+              className="inline-flex items-center justify-center gap-2 h-11 px-6 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-wider hover:bg-black/85 transition-colors shadow-sm"
             >
               <span>Questions? Chat with Us →</span>
             </a>
@@ -192,7 +192,7 @@ export default function FaqAccordion() {
                   className="w-full p-6 sm:p-7 flex items-center justify-between gap-4 text-left cursor-pointer group"
                 >
                   <div className="flex items-center gap-3.5 sm:gap-4">
-                    <div className="w-8 h-8 border border-black bg-black text-[#e7ecea] flex items-center justify-center shrink-0 font-mono text-xs font-bold">
+                    <div className="w-8 h-8 border border-black bg-black text-[#f6f5f2] flex items-center justify-center shrink-0 font-mono text-xs font-bold">
                       {faq.number}
                     </div>
                     <h2 className="text-base sm:text-lg font-bold uppercase text-black tracking-tight group-hover:opacity-75 transition-opacity">
@@ -202,7 +202,7 @@ export default function FaqAccordion() {
 
                   <div
                     className={`w-7 h-7 rounded-full border border-black/20 flex items-center justify-center shrink-0 transition-transform duration-200 ${
-                      isOpen ? "rotate-180 bg-black text-[#e7ecea] border-black" : "text-black/60 group-hover:border-black/50"
+                      isOpen ? "rotate-180 bg-black text-[#f6f5f2] border-black" : "text-black/60 group-hover:border-black/50"
                     }`}
                   >
                     <ChevronDown className="w-4 h-4" />

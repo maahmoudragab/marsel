@@ -35,7 +35,7 @@ export default function AboutPage() {
   const whatsappConciergeUrl = getWhatsAppUrl("Hello MARSEL! I'd love to know more about your latest drop.");
 
   return (
-    <div className="min-h-screen bg-[#e7ecea] text-black flex flex-col">
+    <div className="min-h-screen bg-[#f6f5f2] text-black flex flex-col">
       <Header />
 
       <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-8">
@@ -94,7 +94,7 @@ export default function AboutPage() {
             <div className="border border-black/20 bg-black/[0.015] p-7 sm:p-9 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-black/10 pb-4">
-                  <div className="w-9 h-9 border border-black bg-black text-[#e7ecea] flex items-center justify-center">
+                  <div className="w-9 h-9 border border-black bg-black text-[#f6f5f2] flex items-center justify-center">
                     <Palette className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-black/40 font-bold">
@@ -126,7 +126,7 @@ export default function AboutPage() {
             <div className="border border-black/20 bg-black/[0.015] p-7 sm:p-9 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-black/10 pb-4">
-                  <div className="w-9 h-9 border border-black bg-black text-[#e7ecea] flex items-center justify-center">
+                  <div className="w-9 h-9 border border-black bg-black text-[#f6f5f2] flex items-center justify-center">
                     <Layers className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-black/40 font-bold">
@@ -158,7 +158,7 @@ export default function AboutPage() {
             <div className="border border-black/20 bg-black/[0.015] p-7 sm:p-9 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-black/10 pb-4">
-                  <div className="w-9 h-9 border border-black bg-black text-[#e7ecea] flex items-center justify-center">
+                  <div className="w-9 h-9 border border-black bg-black text-[#f6f5f2] flex items-center justify-center">
                     <Compass className="w-4 h-4" />
                   </div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-black/40 font-bold">
@@ -190,16 +190,16 @@ export default function AboutPage() {
 
         {/* ANTHEM FINALE: Simple When It Needs to Be, Bold When It Matters */}
         <section className="py-14 sm:py-16">
-          <div className="border-2 border-black bg-black text-[#e7ecea] p-8 sm:p-14 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+          <div className="border-2 border-black bg-black text-[#f6f5f2] p-8 sm:p-14 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
             <div className="space-y-3 max-w-xl">
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#e7ecea]/50 block">
+              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-[#f6f5f2]/50 block">
                 THE MARSEL ANTHEM
               </span>
               <h2 className="text-2xl sm:text-4xl font-extrabold uppercase tracking-tight leading-snug">
                 Simple when it needs to be. <br />
                 Bold when it matters.
               </h2>
-              <p className="text-xs sm:text-sm font-light text-[#e7ecea]/75 pt-1 uppercase tracking-widest">
+              <p className="text-xs sm:text-sm font-light text-[#f6f5f2]/75 pt-1 uppercase tracking-widest">
                 This is MARSEL. Made to Be Different.
               </p>
             </div>
@@ -207,7 +207,7 @@ export default function AboutPage() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0 pt-2 lg:pt-0">
               <Link
                 href="/"
-                className="h-12 px-8 bg-[#e7ecea] text-black text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors flex items-center justify-center shadow-sm"
+                className="h-12 px-8 bg-[#f6f5f2] text-black text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors flex items-center justify-center shadow-sm"
               >
                 <span>Explore Drops</span>
               </Link>
@@ -215,7 +215,7 @@ export default function AboutPage() {
                 href={whatsappConciergeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-12 px-6 border border-[#e7ecea]/40 text-[#e7ecea] text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                className="h-12 px-6 border border-[#f6f5f2]/40 text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
               >
                 <span>WhatsApp Concierge</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />

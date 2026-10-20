@@ -22,7 +22,7 @@ export default async function CheckoutPage() {
   const { shippingZones, offers } = await getCheckoutDataServer();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#e7ecea] text-black">
+    <div className="min-h-screen flex flex-col bg-[#f6f5f2] text-black">
       <Header />
 
       <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-8">

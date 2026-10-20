@@ -396,7 +396,7 @@ export default function ProductDetailClient({
                   }}
                   className={`min-w-12 h-10 px-3 text-xs font-mono font-bold border transition-colors cursor-pointer ${
                     selectedSize === size
-                      ? "bg-black text-[#e7ecea] border-black"
+                      ? "bg-black text-[#f6f5f2] border-black"
                       : "border-black/25 text-black/70 hover:border-black hover:text-black"
                   }`}
                 >
@@ -409,7 +409,7 @@ export default function ProductDetailClient({
               <button
                 type="button"
                 onClick={openDrawer}
-                className="flex items-center justify-center gap-2 w-full h-12 mt-5 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-widest hover:bg-black/85 cursor-pointer shadow-sm animate-fade-in"
+                className="flex items-center justify-center gap-2 w-full h-12 mt-5 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 cursor-pointer shadow-sm animate-fade-in"
               >
                 <Check className="w-4 h-4 text-emerald-400" />
                 <span>Added · View in Bag →</span>
@@ -438,7 +438,7 @@ export default function ProductDetailClient({
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="flex-1 h-12 bg-black text-[#e7ecea] text-xs font-bold uppercase tracking-widest cursor-pointer hover:bg-black/85 transition-colors shadow-sm"
+                  className="flex-1 h-12 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest cursor-pointer hover:bg-black/85 transition-colors shadow-sm"
                 >
                   Add to Bag
                 </button>
@@ -571,27 +571,27 @@ export default function ProductDetailClient({
                   <line x1="82" y1="105" x2="198" y2="105" stroke="#000" strokeWidth="1.2" />
                   <circle cx="82" cy="105" r="2" fill="#000" />
                   <circle cx="198" cy="105" r="2" fill="#000" />
-                  <circle cx="140" cy="105" r="7.5" fill="#e7ecea" stroke="#000" strokeWidth="1" />
+                  <circle cx="140" cy="105" r="7.5" fill="#f6f5f2" stroke="#000" strokeWidth="1" />
                   <text x="140" y="108.5" textAnchor="middle" fontSize="9" fontWeight="bold" fontFamily="monospace" fill="#000">A</text>
 
                   {/* Dimension B: Length */}
                   <line x1="165" y1="46" x2="165" y2="195" stroke="#000" strokeWidth="1.2" strokeDasharray="3 2" />
                   <circle cx="165" cy="46" r="2" fill="#000" />
                   <circle cx="165" cy="195" r="2" fill="#000" />
-                  <circle cx="165" cy="150" r="7.5" fill="#e7ecea" stroke="#000" strokeWidth="1" />
+                  <circle cx="165" cy="150" r="7.5" fill="#f6f5f2" stroke="#000" strokeWidth="1" />
                   <text x="165" y="153.5" textAnchor="middle" fontSize="9" fontWeight="bold" fontFamily="monospace" fill="#000">B</text>
 
                   {/* Dimension C: Shoulder */}
                   <line x1="52" y1="62" x2="228" y2="62" stroke="#000" strokeWidth="1" />
                   <circle cx="52" cy="62" r="2" fill="#000" />
                   <circle cx="228" cy="62" r="2" fill="#000" />
-                  <circle cx="140" cy="62" r="7.5" fill="#e7ecea" stroke="#000" strokeWidth="1" />
+                  <circle cx="140" cy="62" r="7.5" fill="#f6f5f2" stroke="#000" strokeWidth="1" />
                   <text x="140" y="65.5" textAnchor="middle" fontSize="9" fontWeight="bold" fontFamily="monospace" fill="#000">C</text>
 
                   {/* Dimension D: Sleeve */}
                   <line x1="52" y1="70" x2="38" y2="120" stroke="#000" strokeWidth="1" strokeDasharray="3 2" />
                   <circle cx="38" cy="120" r="2" fill="#000" />
-                  <circle cx="32" cy="88" r="7.5" fill="#e7ecea" stroke="#000" strokeWidth="1" />
+                  <circle cx="32" cy="88" r="7.5" fill="#f6f5f2" stroke="#000" strokeWidth="1" />
                   <text x="32" y="91.5" textAnchor="middle" fontSize="9" fontWeight="bold" fontFamily="monospace" fill="#000">D</text>
                 </svg>
 

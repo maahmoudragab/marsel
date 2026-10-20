@@ -86,7 +86,7 @@ export default async function ConfirmOrderPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#e7ecea] text-black flex flex-col">
+    <div className="min-h-screen bg-[#f6f5f2] text-black flex flex-col">
       <Header />
 
       <main className="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-8">

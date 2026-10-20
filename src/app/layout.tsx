@@ -11,7 +11,7 @@ import {
 } from "@/lib/seo";
 
 export const viewport: Viewport = {
-  themeColor: "#f4f3f0",
+  themeColor: "#f6f5f2",
   colorScheme: "light",
   width: "device-width",
   initialScale: 1,
@@ -121,7 +121,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
         />
       </head>
-      <body className="antialiased bg-[#f4f3f0] text-black">
+      <body className="antialiased bg-[#f6f5f2] text-black">
         <Providers>{children}</Providers>
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
