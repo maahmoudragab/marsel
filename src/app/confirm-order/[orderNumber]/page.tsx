@@ -16,7 +16,7 @@ export async function generateMetadata({
   const { orderNumber } = await params;
   const cleanNumber = orderNumber.replace(/^#+/, "").trim();
   return {
-    title: `Confirm Order ${cleanNumber} | MARSEL STORE`,
+    title: `CONFIRM #${cleanNumber}`,
     description: "Review order details and confirm delivery at MARSEL STORE.",
     robots: {
       index: false,

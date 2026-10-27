@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import TrackOrderClient from "./TrackOrderClient";
 
 export const metadata: Metadata = {
-  title: "Track Order | MARSEL",
+  title: "TRACK ORDER",
   description: "Real-time parcel status & delivery tracking for MARSEL orders.",
 };
 

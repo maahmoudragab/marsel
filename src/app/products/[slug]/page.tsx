@@ -42,7 +42,7 @@ export async function generateMetadata({
     `${product.title} by MARSEL (مارسيل) — ${product.fit || "Oversized Boxy Cut"}. Made with ${product.composition || "100% Egyptian Cotton"} in Cairo. Fast delivery & cash on delivery across Egypt.`;
 
   return {
-    title: `${product.title} — ${product.price} EGP | MARSEL`,
+    title: product.title.toUpperCase(),
     description,
     keywords: [
       product.title,
@@ -122,7 +122,7 @@ export default async function ProductDetailPage({
       <Header />
 
       <main className="max-w-[1700px]  mx-auto px-4 sm:px-8">
-        <div className="relative z-10 py-2.5 sm:py-2">
+        <div className="relative z-10 py-1 sm:py-1">
           <nav className="text-[11px] font-mono uppercase tracking-wider text-black/50 flex items-center gap-1.5 flex-wrap">
             <Link href="/" className="hover:text-black transition-colors font-mono">marsel</Link>
             <span>/</span>

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { BRAND_CONFIG } from "@/config/brand";
 
 export const metadata: Metadata = {
-  title: "MARSEL | Dropping Soon",
+  title: "COMING SOON",
   description: "الكوليكشن الجديد قيد التجهيز.. الموقع هيفتح قريب جداً.",
   robots: {
     index: true,

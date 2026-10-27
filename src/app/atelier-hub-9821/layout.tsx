@@ -8,7 +8,7 @@ import FactoryShell from "./FactoryShell";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "بوابة الإنتاج والمصنع | MARSEL Production",
+  title: "ATELIER",
   robots: {
     index: false,
     follow: false,

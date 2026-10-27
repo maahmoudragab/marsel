@@ -19,7 +19,7 @@
     "@supabase/supabase-js": "^2.117.3",
     "embla-carousel-react": "^8.6.0",
     "lucide-react": "^1.56.0",
-    "next": "^16.4.0",
+    "next": "^16.4.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "recharts": "^3.10.1",

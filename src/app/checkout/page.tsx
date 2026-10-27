@@ -6,7 +6,7 @@ import CheckoutClient from "./CheckoutClient";
 import { getCheckoutDataServer } from "@/lib/serverCheckout";
 
 export const metadata: Metadata = {
-  title: "Checkout | MARSEL",
+  title: "CHECKOUT",
   description: "Secure checkout and direct cash on delivery across Egypt with MARSEL.",
   robots: {
     index: false,

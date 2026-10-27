@@ -1,8 +1,12 @@
+import { cache } from "react";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { normalizeProduct, type Product } from "@/lib/product";
 
 // Public Supabase client for Server Components (singleton, no cookie overhead, maximum SSR performance)
 let _publicSupabase: ReturnType<typeof createSupabaseClient> | null = null;
+let _cachedProducts: Product[] | null = null;
+let _lastFetchTime = 0;
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds memory cache
 
 export function getPublicSupabase() {
   if (!_publicSupabase) {
@@ -23,7 +27,12 @@ export function getPublicSupabase() {
   return _publicSupabase;
 }
 
-export async function getProductsServer(): Promise<Product[]> {
+export const getProductsServer = cache(async function getProductsServer(): Promise<Product[]> {
+  const now = Date.now();
+  if (_cachedProducts && now - _lastFetchTime < CACHE_TTL_MS) {
+    return _cachedProducts;
+  }
+
   try {
     const supabase = getPublicSupabase();
     const { data, error } = await supabase
@@ -34,17 +43,19 @@ export async function getProductsServer(): Promise<Product[]> {
 
     if (error) {
       console.error("SSR getProducts error:", error.message);
-      return [];
+      return _cachedProducts ?? [];
     }
 
-    return (data ?? []).map(normalizeProduct);
+    _cachedProducts = (data ?? []).map(normalizeProduct);
+    _lastFetchTime = now;
+    return _cachedProducts;
   } catch (err) {
     console.error("SSR getProducts unexpected error:", err);
-    return [];
+    return _cachedProducts ?? [];
   }
-}
+});
 
-export async function getProductBySlugServer(slugOrId: string): Promise<Product | null> {
+export const getProductBySlugServer = cache(async function getProductBySlugServer(slugOrId: string): Promise<Product | null> {
   try {
     const supabase = getPublicSupabase();
     // Try matching slug first
@@ -75,9 +86,9 @@ export async function getProductBySlugServer(slugOrId: string): Promise<Product 
     console.error("SSR getProductBySlug error:", err);
     return null;
   }
-}
+});
 
-export async function getRecommendationsServer(
+export const getRecommendationsServer = cache(async function getRecommendationsServer(
   currentProduct: Product,
   limit = 4
 ): Promise<Product[]> {
@@ -101,4 +112,4 @@ export async function getRecommendationsServer(
   } catch {
     return [];
   }
-}
+});

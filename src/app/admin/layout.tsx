@@ -5,7 +5,7 @@ import AdminProviders from "@/components/admin/AdminProviders";
 import { ADMIN_SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
 export const metadata = {
-  title: "marsel Admin | Studio Control",
+  title: "DASHBOARD",
   robots: {
     index: false,
     follow: false,

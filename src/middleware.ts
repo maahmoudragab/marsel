@@ -94,7 +94,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return updateSession(request);
+  return NextResponse.next();
 }
 
 export const config = {

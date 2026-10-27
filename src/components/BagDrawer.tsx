@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { X, ArrowRight, ShoppingBag } from "lucide-react";
+import { X, ArrowRight, ArrowLeft, ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function BagDrawer() {
   const {
@@ -17,6 +19,7 @@ export default function BagDrawer() {
     hydrated,
   } = useCart();
 
+  const { isArabic, t, translateTitle, translateColor, formatPrice } = useLanguage();
   const router = useRouter();
 
   // Prevent body scrolling when drawer is open
@@ -51,44 +54,53 @@ export default function BagDrawer() {
     <div
       className={`fixed inset-0 z-50 ${
         isDrawerOpen
-          ? "pointer-events-auto"
-          : "pointer-events-none"
-      }`}
+          ? "opacity-100 visible pointer-events-auto"
+          : "opacity-0 invisible pointer-events-none"
+      } transition-[opacity,visibility] duration-200`}
+      style={{ display: isDrawerOpen ? "block" : "none" }}
       aria-hidden={!isDrawerOpen}
     >
       {/* Backdrop with smooth fade in / out */}
       <div
-        className={`fixed inset-0 bg-black/40 transition-opacity duration-300 ease-out ${
-          isDrawerOpen ? "opacity-100" : "opacity-0"
-        }`}
+        className="fixed inset-0 bg-black/40"
         onClick={closeDrawer}
         aria-hidden="true"
       />
 
-      {/* Drawer slide-in from right to left, and slide-out to right */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10 pointer-events-none">
+      {/* Drawer slide-in: from right in LTR, from left in RTL */}
+      <div
+        className={`fixed inset-y-0 ${
+          isArabic ? "left-0 pr-6 sm:pr-10" : "right-0 pl-6 sm:pl-10"
+        } max-w-full flex pointer-events-none`}
+      >
         <aside
           role="dialog"
           aria-modal="true"
-          aria-label="Shopping Bag"
-          className={`w-screen max-w-md bg-[#f6f5f2] text-black border-l border-black shadow-2xl flex flex-col justify-between pointer-events-auto transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
-            isDrawerOpen ? "translate-x-0" : "translate-x-full"
+          aria-label={isArabic ? "حقيبة التسوق" : "Shopping Bag"}
+          className={`w-screen max-w-md bg-[#f6f5f2] text-black ${
+            isArabic ? "border-r" : "border-l"
+          } border-black shadow-2xl flex flex-col justify-between pointer-events-auto ${
+            isDrawerOpen
+              ? "translate-x-0 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              : isArabic
+              ? "-translate-x-full transition-none"
+              : "translate-x-full transition-none"
           }`}
           style={{ willChange: "transform", backfaceVisibility: "hidden" }}
         >
           {/* Header */}
           <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-black/20 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em]">
-                YOUR BAG
+              <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.15em]">
+                {t("shoppingBag")}
               </span>
-              <span className="text-xs text-black/50 font-mono" suppressHydrationWarning>
+              <span className="text-xs text-black/50 font-mono font-bold" suppressHydrationWarning>
                 [{totalCount}]
               </span>
             </div>
             <button
               onClick={closeDrawer}
-              aria-label="Close Bag"
+              aria-label={isArabic ? "إغلاق السلة" : "Close Bag"}
               className="p-1 text-black/60 hover:text-black transition-colors cursor-pointer text-sm font-bold"
             >
               <X className="w-4 h-4" />
@@ -100,7 +112,7 @@ export default function BagDrawer() {
             {!hydrated ? (
               <div className="h-full flex items-center justify-center text-center py-16">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-black/40">
-                  Loading bag...
+                  {isArabic ? "جاري تحميل السلة..." : "Loading bag..."}
                 </span>
               </div>
             ) : items.length === 0 ? (
@@ -108,10 +120,10 @@ export default function BagDrawer() {
                 <ShoppingBag className="w-8 h-8 text-black/30" />
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase tracking-wider text-black">
-                    Your bag is empty
+                    {t("bagEmpty")}
                   </p>
-                  <p className="text-[11px] text-black/50 uppercase tracking-widest">
-                    Discover pieces made to be different
+                  <p className="text-[11px] text-black/50 tracking-wide">
+                    {t("bagEmptySub")}
                   </p>
                 </div>
                 <button
@@ -119,80 +131,92 @@ export default function BagDrawer() {
                   onClick={closeDrawer}
                   className="px-5 py-2.5 border border-black text-xs font-semibold uppercase tracking-wider hover:bg-black hover:text-[#f6f5f2] transition-colors cursor-pointer"
                 >
-                  Continue Shopping
+                  {t("exploreCollection")}
                 </button>
               </div>
             ) : (
-              items.map((item) => (
-                <div key={item.id} className="py-4 flex gap-3.5 items-start first:pt-1 last:pb-2">
-                  {/* Thumbnail */}
-                  <div className="w-16 h-20 shrink-0 border border-black/15 bg-black/[0.03] flex items-center justify-center p-1">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
+              items.map((item) => {
+                const localizedTitle = translateTitle(item.title, item.slug, item.styling_notes);
+                const localizedColor = translateColor(item.color);
 
-                  {/* Details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-2">
-                      <h4 className="text-xs font-bold uppercase tracking-tight truncate">
-                        {item.title}
-                      </h4>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-black/40 hover:text-black text-xs p-0.5 transition-colors cursor-pointer"
-                        title="Remove piece"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                return (
+                  <div key={item.id} className="py-4 flex gap-3.5 items-start first:pt-1 last:pb-2">
+                    {/* Thumbnail */}
+                    <div className="relative w-16 h-20 shrink-0 border border-black/15 bg-white/40 flex items-center justify-center p-1 overflow-hidden">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={localizedTitle}
+                          fill
+                          sizes="160px"
+                          quality={85}
+                          className="object-contain p-1"
+                        />
+                      ) : null}
                     </div>
 
-                    <div className="text-[11px] text-black/60 uppercase tracking-wider mt-0.5">
-                      <span>Size: {item.size}</span>
-                      {item.color && <span> · {item.color}</span>}
-                    </div>
-
-                    <div className="flex items-center justify-between mt-3">
-                      {/* Quantity Stepper */}
-                      <div className="flex items-center border border-black/30 bg-transparent">
+                    {/* Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="text-xs font-bold uppercase tracking-tight truncate">
+                          {localizedTitle}
+                        </h4>
                         <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, -1)}
-                          className="w-6 h-6 flex items-center justify-center text-xs hover:bg-black/10 transition-colors cursor-pointer"
-                          aria-label="Decrease quantity"
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-black/40 hover:text-black text-xs p-0.5 transition-colors cursor-pointer"
+                          title={t("remove")}
                         >
-                          −
-                        </button>
-                        <span className="w-7 text-center text-xs font-mono">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, 1)}
-                          className="w-6 h-6 flex items-center justify-center text-xs hover:bg-black/10 transition-colors cursor-pointer"
-                          aria-label="Increase quantity"
-                        >
-                          +
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
-                      {/* Price */}
-                      <div className="text-right">
-                        {item.compareAtPrice && item.compareAtPrice > item.price && (
-                          <span className="text-[10px] text-black/40 line-through mr-1 font-mono">
-                            {(item.compareAtPrice * item.quantity).toLocaleString()}
+                      <div className="text-[11px] text-black/60 uppercase tracking-wider mt-0.5">
+                        <span>
+                          {t("sizeLabel")} {item.size}
+                        </span>
+                        {item.color && <span> · {localizedColor}</span>}
+                      </div>
+
+                      <div className="flex items-center justify-between mt-3">
+                        {/* Quantity Stepper */}
+                        <div className="flex items-center border border-black/30 bg-transparent">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, -1)}
+                            className="w-6 h-6 flex items-center justify-center text-xs hover:bg-black/10 transition-colors cursor-pointer"
+                            aria-label="Decrease quantity"
+                          >
+                            −
+                          </button>
+                          <span className="w-7 text-center text-xs font-mono font-bold">
+                            {item.quantity}
                           </span>
-                        )}
-                        <span className="text-xs font-bold font-mono">
-                          {(item.price * item.quantity).toLocaleString()} EGP
-                        </span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, 1)}
+                            className="w-6 h-6 flex items-center justify-center text-xs hover:bg-black/10 transition-colors cursor-pointer"
+                            aria-label="Increase quantity"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Price */}
+                        <div className="text-right rtl:text-left">
+                          {item.compareAtPrice && item.compareAtPrice > item.price && (
+                            <span className="text-[10px] text-black/40 line-through mr-1 rtl:ml-1 font-mono">
+                              {formatPrice(item.compareAtPrice * item.quantity)}
+                            </span>
+                          )}
+                          <span className="text-xs font-bold font-mono">
+                            {formatPrice(item.price * item.quantity)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -202,13 +226,13 @@ export default function BagDrawer() {
               {/* Subtotal */}
               <div className="space-y-1">
                 <div className="flex justify-between items-baseline text-xs font-semibold uppercase tracking-wider">
-                  <span>Subtotal</span>
+                  <span>{t("subtotal")}</span>
                   <span className="text-base font-bold font-mono">
-                    {totalPrice.toLocaleString()} EGP
+                    {formatPrice(totalPrice)}
                   </span>
                 </div>
-                <p className="text-[10px] text-black/50 uppercase tracking-wider">
-                  Shipping & discounts calculated at checkout
+                <p className="text-[10px] text-black/50 tracking-wide">
+                  {t("bagCashNotice")}
                 </p>
               </div>
 
@@ -216,18 +240,22 @@ export default function BagDrawer() {
               <button
                 type="button"
                 onClick={handleCheckoutClick}
-                className="w-full py-3.5 bg-black text-[#f6f5f2] text-xs font-semibold uppercase tracking-[0.2em] hover:bg-black/85 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-black text-[#f6f5f2] text-xs font-semibold uppercase tracking-[0.18em] hover:bg-black/85 transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>Proceed to Checkout</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span>{t("checkoutButton")}</span>
+                {isArabic ? (
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                ) : (
+                  <ArrowRight className="w-3.5 h-3.5" />
+                )}
               </button>
 
               <button
                 type="button"
                 onClick={closeDrawer}
-                className="w-full text-center text-[10px] text-black/60 uppercase tracking-widest hover:text-black transition-colors underline underline-offset-4"
+                className="w-full text-center text-[10px] text-black/60 uppercase tracking-widest hover:text-black transition-colors underline underline-offset-4 cursor-pointer"
               >
-                Or Continue Browsing
+                {isArabic ? "أو واصل التسوق" : "Or Continue Browsing"}
               </button>
             </div>
           )}

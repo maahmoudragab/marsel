@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Plus, Minus } from "lucide-react";
 import { BRAND_CONFIG, getWhatsAppUrl } from "@/config/brand";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface FaqQuestion {
   id: string;
@@ -13,25 +14,16 @@ interface FaqQuestion {
 }
 
 export default function FaqAccordion() {
+  const { isArabic } = useLanguage();
   const [openIds, setOpenIds] = useState<string[]>(["faq-01"]);
 
-  const whatsappContactUrl = getWhatsAppUrl("Hello MARSEL! I have a question regarding my order and policies.");
+  const whatsappContactUrl = getWhatsAppUrl(
+    isArabic
+      ? "مرحباً مارسيل! لدي استفسار بخصوص الطلب والسياسات."
+      : "Hello MARSEL! I have a question regarding my order and policies."
+  );
 
-  const toggleItem = (id: string) => {
-    setOpenIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  const toggleAll = () => {
-    if (openIds.length === FAQS.length) {
-      setOpenIds([]);
-    } else {
-      setOpenIds(FAQS.map((f) => f.id));
-    }
-  };
-
-  const FAQS: FaqQuestion[] = [
+  const FAQS_EN: FaqQuestion[] = [
     {
       id: "faq-01",
       number: "01",
@@ -124,6 +116,115 @@ export default function FaqAccordion() {
     },
   ];
 
+  const FAQS_AR: FaqQuestion[] = [
+    {
+      id: "faq-01",
+      number: "01",
+      question: "كم يستغرق الشحن وما هي تكلفة التوصيل؟",
+      answer: (
+        <p>
+          يصل الشحن داخل القاهرة والجيزة خلال <strong>٢ إلى ٤ أيام عمل</strong>. وتصل الشحنات لباقي محافظات الجمهورية خلال <strong>٣ إلى ٥ أيام عمل</strong>. تُحسب مصاريف الشحن تلقائياً وبدقة حسب محافظتك ومنطقتك عند صفحة إتمام الطلب قبل التأكيد.
+        </p>
+      ),
+    },
+    {
+      id: "faq-02",
+      number: "02",
+      question: "هل تقومون بالشحن والتوصيل لجميع محافظات مصر؟",
+      answer: (
+        <p>
+          نعم، توفر مارسيل شحناً مباشراً وسريعاً حتى باب المنزل لكافة محافظات ومدن جمهورية مصر العربية دون أي استثناء عبر شبكات شحن موثوقة.
+        </p>
+      ),
+    },
+    {
+      id: "faq-03",
+      number: "03",
+      question: "هل يحق لي فتح ومعاينة الشحنة مع المندوب قبل دفع الحساب؟",
+      answer: (
+        <p>
+          بكل تأكيد. من حقك التام فتح الشحنة ومعاينة المقاس وجودة الخامة والتطريز بوجود مندوب الشحن قبل سداد أي مبلغ. وإذا لم تنل القطعة إعجابك، يمكنك إرجاعها فوراً مع المندوب و<strong>دفع مصاريف الشحن فقط</strong>.
+        </p>
+      ),
+    },
+    {
+      id: "faq-04",
+      number: "04",
+      question: "ما هي سياسة الاستبدال والاسترجاع خلال ١٤ يوماً؟",
+      answer: (
+        <p>
+          حتى بعد مغادرة المندوب، لديك مهلة تصل إلى <strong>١٤ يوماً</strong> من تاريخ الاستلام لطلب استبدال المقاس أو استرجاع المنتج بالكامل، بشرط أن تكون القطعة بحالتها الأصلية غير مستعملة وبجميع تكتات ومغلفات مارسيل الأصلية.
+        </p>
+      ),
+    },
+    {
+      id: "faq-05",
+      number: "05",
+      question: "كيف ومتى أسترد أموالي في حالة الاسترجاع؟",
+      answer: (
+        <p>
+          تواصل معنا على الواتساب برقم طلبك، وسنقوم بحجز مندوب لاستلام القطعة من باب منزلك. وبمجرد وصول القطعة للأتيلييه والتأكد من حالتها، يتم تحويل المبلغ فوراً عبر <strong>إنستاباي (InstaPay) أو المحافظ الإلكترونية (فودافون كاش)</strong>.
+        </p>
+      ),
+    },
+    {
+      id: "faq-06",
+      number: "06",
+      question: "من يتحمل مصاريف الشحن في الاستبدال أو الاسترجاع؟",
+      answer: (
+        <p>
+          يتحمل العميل مصاريف شحن المندوب العادية في حال الاستبدال أو الاسترجاع الشخصي. أما في حال وجود أي خطأ في المنتج أو عيب صناعة، <strong>تتحمل مارسيل ١٠٠٪ من جميع تكاليف الشحن ذهاباً وإياباً</strong>.
+        </p>
+      ),
+    },
+    {
+      id: "faq-07",
+      number: "07",
+      question: "ما هي طرق الدفع المتاحة بالمتجر؟",
+      answer: (
+        <p>
+          نوفر خيار <strong>الدفع نقداً عند الاستلام (COD)</strong> بعد المعاينة، كما نوفر التحويل المباشر عبر <strong>إنستاباي (InstaPay) أو محافظ الهاتف المحمول (فودافون كاش، أورنج، اتصالات)</strong> بالتنسيق مع خدمة العملاء.
+        </p>
+      ),
+    },
+    {
+      id: "faq-08",
+      number: "08",
+      question: "هل مقاسات قطع مارسيل عادية أم أوفر سايز (واسعة)؟",
+      answer: (
+        <p>
+          معظم تصاميم مارسيل مصممة بقصات <strong>أوفر سايز / ريلاكسد مريحة</strong>. ننصح باختيار مقاسك المعتاد للحصول على مظهر الستريت وير العصري، أو مقاساً أصغر لمظهر أكثر تحديداً. يتوفر جدول قياسات دقيق بالسنتيمتر في صفحة كل قطعة.
+        </p>
+      ),
+    },
+    {
+      id: "faq-09",
+      number: "09",
+      question: "كيف أتواصل مع الدعم الفني أو أعدل بيانات طلبي؟",
+      answer: (
+        <p>
+          فريق خدمة عملاء مارسيل متاح يومياً عبر الواتساب على رقم <strong>{BRAND_CONFIG.contact.displayPhone}</strong> أو عبر رسائل الإنستغرام <strong>@{BRAND_CONFIG.social.instagram.handle}</strong>. لتعديل العنوان أو المقاسات، يرجى مراسلتنا فوراً قبل خروج الطلب مع شركة الشحن.
+        </p>
+      ),
+    },
+  ];
+
+  const FAQS = isArabic ? FAQS_AR : FAQS_EN;
+
+  const toggleItem = (id: string) => {
+    setOpenIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAll = () => {
+    if (openIds.length === FAQS.length) {
+      setOpenIds([]);
+    } else {
+      setOpenIds(FAQS.map((f) => f.id));
+    }
+  };
+
   const allOpen = openIds.length === FAQS.length;
 
   return (
@@ -135,23 +236,27 @@ export default function FaqAccordion() {
             marsel
           </Link>
           <span>/</span>
-          <span className="text-black font-semibold">frequently asked questions</span>
+          <span className="text-black font-semibold">
+            {isArabic ? "الأسئلة الشائعة" : "frequently asked questions"}
+          </span>
         </nav>
       </div>
 
-      {/* Content Container - Full Width Box Layout */}
-      <div className="w-full space-y-8 pb-16 pt-2">
-        {/* Page Header (Full Width) */}
+      {/* Content Container */}
+      <div className="w-full space-y-8 pb-16 pt-2 text-left rtl:text-right">
+        {/* Page Header */}
         <div className="border-b border-black/20 pb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <span className="text-[11px] font-mono uppercase tracking-widest text-black/60 font-bold block mb-1">
-              MARSEL STUDIO — CLIENT CONCIERGE & HELP
+              {isArabic ? "استوديو مارسيل — خدمة العملاء والمساعدة" : "MARSEL STUDIO — CLIENT CONCIERGE & HELP"}
             </span>
             <h1 className="text-2xl sm:text-4xl font-extrabold uppercase tracking-tight text-black">
-              Frequently Asked Questions
+              {isArabic ? "الأسئلة الشائعة" : "Frequently Asked Questions"}
             </h1>
-            <p className="w-full lg:max-w-[60%] text-xs sm:text-sm font-semibold text-black/60 tracking-wider mt-1.5 text-justify">
-              9 essential answers regarding courier inspection, nationwide delivery, sizing, and 14-day returns.
+            <p className="w-full lg:max-w-[60%] text-xs sm:text-sm font-semibold text-black/60 tracking-wider mt-1.5">
+              {isArabic
+                ? "إجابات شاملة حول معاينة الأوردر مع المندوب، الشحن لجميع المحافظات، المقاسات، والاسترجاع خلال ١٤ يوماً."
+                : "9 essential answers regarding courier inspection, nationwide delivery, sizing, and 14-day returns."}
             </p>
           </div>
 
@@ -159,9 +264,11 @@ export default function FaqAccordion() {
             <button
               type="button"
               onClick={toggleAll}
-              className="inline-flex items-center justify-center h-11 px-4 border border-black/30 bg-transparent text-xs font-bold uppercase tracking-wider text-black hover:bg-black/5 transition-colors"
+              className="inline-flex items-center justify-center h-11 px-4 border border-black/30 bg-transparent text-xs font-bold uppercase tracking-wider text-black hover:bg-black/5 transition-colors cursor-pointer"
             >
-              {allOpen ? "Collapse All" : "Expand All"}
+              {allOpen
+                ? isArabic ? "طي الكل" : "Collapse All"
+                : isArabic ? "فتح الكل" : "Expand All"}
             </button>
 
             <a
@@ -170,50 +277,43 @@ export default function FaqAccordion() {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 h-11 px-6 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-wider hover:bg-black/85 transition-colors shadow-sm"
             >
-              <span>Questions? Chat with Us →</span>
+              <span>{isArabic ? "تحدث معنا عبر واتساب ←" : "Questions? Chat with Us →"}</span>
             </a>
           </div>
         </div>
 
-        {/* 9 Collapsible Questions */}
+        {/* Collapsible Questions */}
         <div className="space-y-4">
           {FAQS.map((faq) => {
             const isOpen = openIds.includes(faq.id);
-
             return (
               <div
                 key={faq.id}
-                className="w-full border border-black/20 bg-black/[0.015] transition-colors"
+                className="border border-black/20 bg-black/[0.015] hover:border-black/50 transition-colors"
               >
                 <button
                   type="button"
                   onClick={() => toggleItem(faq.id)}
                   aria-expanded={isOpen}
-                  className="w-full p-6 sm:p-7 flex items-center justify-between gap-4 text-left cursor-pointer group"
+                  className="w-full p-5 sm:p-6 flex items-start justify-between gap-4 text-left rtl:text-right cursor-pointer"
                 >
-                  <div className="flex items-center gap-3.5 sm:gap-4">
-                    <div className="w-8 h-8 border border-black bg-black text-[#f6f5f2] flex items-center justify-center shrink-0 font-mono text-xs font-bold">
-                      {faq.number}
-                    </div>
-                    <h2 className="text-base sm:text-lg font-bold uppercase text-black tracking-tight group-hover:opacity-75 transition-opacity">
+                  <div className="flex items-start gap-3 sm:gap-4 flex-1">
+                    <span className="text-xs sm:text-sm font-mono font-bold text-black/40 shrink-0 mt-0.5">
+                      [{faq.number}]
+                    </span>
+                    <h2 className="text-sm sm:text-base font-bold text-black tracking-tight uppercase">
                       {faq.question}
                     </h2>
                   </div>
 
-                  <div
-                    className={`w-7 h-7 rounded-full border border-black/20 flex items-center justify-center shrink-0 transition-transform duration-200 ${
-                      isOpen ? "rotate-180 bg-black text-[#f6f5f2] border-black" : "text-black/60 group-hover:border-black/50"
-                    }`}
-                  >
-                    <ChevronDown className="w-4 h-4" />
+                  <div className="p-1 border border-black/30 shrink-0 text-black">
+                    {isOpen ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="px-6 sm:px-7 pb-6 sm:pb-7 pt-1 border-t border-black/10">
-                    <div className="w-full lg:max-w-[70%] text-sm font-semibold text-black/90 leading-relaxed text-justify">
-                      {faq.answer}
-                    </div>
+                  <div className="px-5 sm:px-6 pb-6 pt-1 text-xs sm:text-sm text-black/80 leading-relaxed border-t border-black/10 mt-1">
+                    <div className="pl-0 sm:pl-10 rtl:sm:pl-0 rtl:sm:pr-10">{faq.answer}</div>
                   </div>
                 )}
               </div>

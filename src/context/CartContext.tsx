@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { Product, getCoverImage } from "@/lib/product";
 
 export interface CartItem {
@@ -14,6 +14,7 @@ export interface CartItem {
   size: string;
   color: string;
   quantity: number;
+  styling_notes?: string | null;
 }
 
 interface CartContextType {
@@ -71,10 +72,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, hydrated]);
 
-  const openDrawer = () => setIsDrawerOpen(true);
-  const closeDrawer = () => setIsDrawerOpen(false);
+  const openDrawer = useCallback(() => setIsDrawerOpen(true), []);
+  const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
 
-  const addToCart = (product: Product, size: string) => {
+  const addToCart = useCallback((product: Product, size: string) => {
     const itemId = `${product.id}-${size}`;
     setItems((prev) => {
       const existing = prev.find((item) => item.id === itemId);
@@ -98,16 +99,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           size,
           color: product.color_name,
           quantity: 1,
+          styling_notes: product.styling_notes || null,
         },
       ];
     });
-  };
+  }, []);
 
-  const removeFromCart = (itemId: string) => {
+  const removeFromCart = useCallback((itemId: string) => {
     setItems((prev) => prev.filter((item) => item.id !== itemId));
-  };
+  }, []);
 
-  const updateQuantity = (itemId: string, delta: number) => {
+  const updateQuantity = useCallback((itemId: string, delta: number) => {
     setItems((prev) =>
       prev
         .map((item) => {
@@ -119,39 +121,50 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         })
         .filter(Boolean) as CartItem[]
     );
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
     try {
       localStorage.removeItem("marsel_cart");
     } catch (error) {
       console.error("Could not clear cart storage:", error);
     }
-  };
+  }, []);
 
-  const totalCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
+  const totalPrice = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
 
-  return (
-    <CartContext.Provider
-      value={{
-        items,
-        isDrawerOpen,
-        hydrated,
-        openDrawer,
-        closeDrawer,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        totalCount,
-        totalPrice,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+  const value = useMemo(
+    () => ({
+      items,
+      isDrawerOpen,
+      hydrated,
+      openDrawer,
+      closeDrawer,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      totalCount,
+      totalPrice,
+    }),
+    [
+      items,
+      isDrawerOpen,
+      hydrated,
+      openDrawer,
+      closeDrawer,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      totalCount,
+      totalPrice,
+    ]
   );
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {

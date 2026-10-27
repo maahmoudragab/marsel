@@ -2,13 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, CheckCircle, ArrowLeft, ShieldCheck, Truck, Tag, X, XCircle } from "lucide-react";
-import { CartItem, useCart } from "@/context/CartContext";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { ShieldCheck, Truck, Tag, X } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 import { createClient } from "@/utils/supabase/client";
 import { isEgyptianMobile } from "@/lib/validation";
-import { getWhatsAppUrl } from "@/config/brand";
 import { parseOffer, evaluateOffers, type RawOffer } from "@/lib/offers";
 import { getStandardGovernorateName } from "@/lib/egyptianLocations";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ShippingZone {
   governorate: string;
@@ -18,7 +20,7 @@ interface ShippingZone {
 
 type ActiveOffer = RawOffer;
 
-const CHECKOUT_CACHE_KEY = "marsel_checkout_options";
+const CHECKOUT_CACHE_KEY = "marsel_checkout_options_v3";
 const CHECKOUT_CACHE_TTL = 60 * 1000;
 
 const GOVERNORATE_ALIASES: Record<string, string[]> = {
@@ -41,7 +43,9 @@ export interface CheckoutClientProps {
 }
 
 export default function CheckoutClient({ initialShippingZones = [], initialOffers = [] }: CheckoutClientProps) {
+  const router = useRouter();
   const { items, removeFromCart, updateQuantity, totalPrice, totalCount, clearCart, hydrated } = useCart();
+  const { isArabic, translateTitle, translateColor, formatPrice } = useLanguage();
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -56,19 +60,6 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderNumber, setOrderNumber] = useState("");
-  const [orderStatus, setOrderStatus] = useState<"pending" | "cancelled">("pending");
-  const [confirmedOrderTotal, setConfirmedOrderTotal] = useState(0);
-  const [confirmedOrder, setConfirmedOrder] = useState<typeof formData | null>(null);
-  const [confirmedItems, setConfirmedItems] = useState<CartItem[]>([]);
-  const [confirmedFinancials, setConfirmedFinancials] = useState<{
-    subtotal: number;
-    shippingFee: number;
-    autoOfferDiscount: number;
-    couponDiscount: number;
-    appliedOfferTitle?: string;
-    appliedCouponCode?: string;
-  } | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>(initialShippingZones);
   const [offers, setOffers] = useState<ActiveOffer[]>(initialOffers);
@@ -101,7 +92,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
             age: parsed.age || prev.age,
             phone: parsed.phone || prev.phone,
             whatsapp: parsed.whatsapp || parsed.phone || prev.whatsapp,
-            governorate: parsed.governorate || prev.governorate,
+            governorate: (parsed.governorate === "Cairo" || parsed.governorate === "Giza") ? parsed.governorate : "Cairo",
             area: parsed.area || prev.area,
             address: parsed.address || prev.address,
           }));
@@ -155,15 +146,8 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
   }, [initialShippingZones]);
 
   const distinctGovernorates = useMemo(() => {
-    const list = ["Cairo", "Giza", "Alexandria"];
-    shippingZones.forEach((z) => {
-      const std = getStandardGovernorateName(z.governorate);
-      if (std && !list.includes(std)) {
-        list.push(std);
-      }
-    });
-    return list;
-  }, [shippingZones]);
+    return ["Cairo", "Giza"];
+  }, []);
 
   const availableAreas = useMemo(
     () => shippingZones.filter((zone) => isGovernorateMatch(zone.governorate, formData.governorate)),
@@ -484,19 +468,6 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
       }).catch((e) => console.error("Notification trigger error:", e));
 
       // 4. Keep confirmed state and clear cart
-      setConfirmedOrderTotal(finalOrderTotal);
-      setConfirmedOrder({ ...formData });
-      setConfirmedItems([...items]);
-      setConfirmedFinancials({
-        subtotal: totalPrice,
-        shippingFee,
-        autoOfferDiscount,
-        couponDiscount,
-        appliedOfferTitle: evaluatedOffer.isFreeShipping
-          ? (evaluatedOffer.appliedOffer?.title || "Free Delivery")
-          : evaluatedOffer.appliedOffer?.title,
-        appliedCouponCode: appliedCoupon?.code,
-      });
       // Persist customer delivery info for returning customer convenience
       try {
         localStorage.setItem(
@@ -515,9 +486,9 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
         // ignore
       }
 
-      setOrderNumber(generatedOrderNumber);
       clearCart();
       setIsConfirmed(true);
+      router.push(`/checkout/${generatedOrderNumber}`);
     } catch (err: unknown) {
       console.error("Order submit error:", err);
       const message = err instanceof Error ? err.message : "Failed to place order.";
@@ -527,168 +498,56 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
     }
   };
 
-  // WhatsApp link generator for order confirmation
-  const getWhatsAppConfirmationUrl = () => {
-    if (!confirmedOrder) return "#";
-    const itemsList = confirmedItems
-      .map((it) => `- ${it.title} (${it.size}) x${it.quantity}`)
-      .join("\n");
-    const msg = `Hello MARSEL!\n\nI just placed Order: ${orderNumber}\n${itemsList}\n\nTotal: ${confirmedOrderTotal.toLocaleString()} EGP (Cash on Delivery)\nName: ${confirmedOrder.name}\nPhone: ${confirmedOrder.phone}\nAddress: ${confirmedOrder.governorate} — ${confirmedOrder.area}\n\nPlease confirm my order!`;
-    return getWhatsAppUrl(msg);
-  };
-
-
   return (
     <div className="w-full">
         {/* URL Breadcrumb */}
         <div className="pt-2 pb-2">
           <nav className="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-black/55 flex items-center gap-1.5 flex-wrap">
-            <Link href="/" className="hover:text-black transition-colors">marsel</Link>
+            <Link href="/" className="hover:text-black transition-colors font-mono">marsel</Link>
             <span>/</span>
-            <span className="text-black font-semibold">checkout</span>
+            <span className="text-black font-semibold">{isArabic ? "إتمام الطلب" : "checkout"}</span>
           </nav>
         </div>
 
-        {/* VIEW 1: ORDER CONFIRMED */}
+        {/* Redirection indicator if order was just placed */}
         {isConfirmed ? (
-          <div className="max-w-2xl mx-auto border border-black p-6 sm:p-12 text-center space-y-6">
-            <div className="flex justify-center">
-              {orderStatus === "cancelled" ? (
-                <XCircle className="w-12 h-12 text-red-600" />
-              ) : (
-                <CheckCircle className="w-12 h-12 text-black" />
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-[11px] font-mono uppercase tracking-widest text-black/60 block">
-                ORDER #{orderNumber}
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight">
-                {orderStatus === "cancelled" ? "Order Cancelled" : "Order Received"}
-              </h1>
-              <p className="text-xs text-black/70 max-w-md mx-auto leading-relaxed">
-                {orderStatus === "cancelled" ? (
-                  <>Order <strong>#{orderNumber}</strong> has been cancelled. No package will be dispatched.</>
-                ) : (
-                  <>Thank you, <strong>{confirmedOrder?.name}</strong>. Your order is registered. We will contact you via WhatsApp before dispatching your piece.</>
-                )}
-              </p>
-            </div>
-
-            {/* Order Details Receipt Box */}
-            <div className="border border-black/20 p-5 text-left text-xs space-y-2.5 bg-black/[0.02]">
-              <div className="flex justify-between border-b border-black/10 pb-2 font-semibold">
-                <span>Status:</span>
-                <span className={`font-mono uppercase font-bold ${orderStatus === "cancelled" ? "text-red-600" : "text-black"}`}>
-                  {orderStatus === "cancelled" ? "Cancelled" : "Registered"}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-black/10 pb-2 font-semibold">
-                <span>Destination:</span>
-                <span>{confirmedOrder?.governorate} — {confirmedOrder?.area}</span>
-              </div>
-              <div className="flex justify-between border-b border-black/10 pb-2">
-                <span>Address:</span>
-                <span className="text-right truncate max-w-xs">{confirmedOrder?.address}</span>
-              </div>
-              <div className="flex justify-between border-b border-black/10 pb-2">
-                <span>Subtotal:</span>
-                <span className="font-mono">{confirmedFinancials?.subtotal.toLocaleString()} EGP</span>
-              </div>
-              <div className="flex justify-between border-b border-black/10 pb-2">
-                <span>Delivery:</span>
-                <span className="font-mono">
-                  {confirmedFinancials?.shippingFee === 0 ? (
-                    <strong className="text-emerald-700">FREE ({confirmedFinancials.appliedOfferTitle || "Offer"})</strong>
-                  ) : (
-                    `${confirmedFinancials?.shippingFee.toLocaleString()} EGP`
-                  )}
-                </span>
-              </div>
-              {confirmedFinancials?.autoOfferDiscount ? (
-                <div className="flex justify-between border-b border-black/10 pb-2 text-emerald-700 font-semibold">
-                  <span>Offer Discount ({confirmedFinancials.appliedOfferTitle || "Promo"}):</span>
-                  <span className="font-mono">−{confirmedFinancials.autoOfferDiscount.toLocaleString()} EGP</span>
-                </div>
-              ) : null}
-              {confirmedFinancials?.couponDiscount ? (
-                <div className="flex justify-between border-b border-black/10 pb-2 text-emerald-700 font-semibold">
-                  <span>Coupon Code ({confirmedFinancials.appliedCouponCode}):</span>
-                  <span className="font-mono">−{confirmedFinancials.couponDiscount.toLocaleString()} EGP</span>
-                </div>
-              ) : null}
-              <div className="flex justify-between border-b border-black/10 pb-2">
-                <span>Payment Method:</span>
-                <span>Cash on Delivery</span>
-              </div>
-              <div className="flex justify-between font-bold text-sm pt-1">
-                <span>Total to Pay:</span>
-                <span className="font-mono">{confirmedOrderTotal.toLocaleString()} EGP</span>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-3 pt-2">
-              <Link
-                href={`/track?order=${orderNumber}`}
-                className="w-full h-12 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors shadow-sm flex items-center justify-center gap-2"
-              >
-                <span>Track Your Order Live →</span>
-              </Link>
-
-              {orderStatus !== "cancelled" && (
-                <a
-                  href={getWhatsAppConfirmationUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full h-12 border border-black text-xs font-bold uppercase tracking-widest hover:bg-black/10 transition-colors flex items-center justify-center gap-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Confirm on WhatsApp</span>
-                </a>
-              )}
-
-              <Link
-                href="/"
-                className="block w-full py-2.5 text-xs text-black/60 uppercase tracking-widest hover:text-black transition-colors"
-              >
-                Back to Store
-              </Link>
-            </div>
+          <div className="py-24 text-center space-y-3 font-mono">
+            <span className="text-xs uppercase tracking-widest text-black/60 block animate-pulse">
+              {isArabic ? "جاري تحويلك لتفاصيل طلبك..." : "Redirecting to your order..."}
+            </span>
           </div>
         ) : !hydrated ? (
           /* Initializing state to prevent flashing "Your bag is empty" */
           <div className="py-24 text-center space-y-3">
             <span className="text-[10px] font-mono uppercase tracking-widest text-black/40 block">
-              Loading Checkout...
+              {isArabic ? "جاري تجهيز صفحة إتمام الطلب..." : "Loading Checkout..."}
             </span>
           </div>
         ) : items.length === 0 ? (
           /* VIEW 2: EMPTY CART */
           <div className="max-w-md mx-auto text-center py-20 space-y-4">
             <h1 className="text-sm font-bold uppercase tracking-widest text-black/60">
-              Your bag is empty
+              {isArabic ? "حقيبتك فارغة" : "Your bag is empty"}
             </h1>
             <p className="text-xs text-black/50">
-              Add pieces from the collection to proceed with checkout.
+              {isArabic ? "أضف قطعاً من التشكيلة لإتمام الطلب." : "Add pieces from the collection to proceed with checkout."}
             </p>
             <Link
               href="/"
               className="inline-flex items-center justify-center h-12 px-8 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors shadow-sm mt-2"
             >
-              Explore Drops
+              {isArabic ? "تصفح التشكيلة" : "Explore Drops"}
             </Link>
           </div>
         ) : (
           /* VIEW 3: CHECKOUT TWO-COLUMN LAYOUT */
-          <div>
+          <div className="text-left rtl:text-right">
             <div className="border-b border-black/20 pb-3 mb-5">
               <h1 className="text-xl sm:text-2xl font-bold uppercase tracking-tight">
-                Checkout
+                {isArabic ? "إتمام الطلب" : "Checkout"}
               </h1>
               <p className="text-xs text-black/60 uppercase tracking-widest mt-1">
-                Independent Clothing Label — Complete Your Order
+                {isArabic ? "استوديو مارسيل — أكمل بيانات التوصيل والشحن" : "Independent Clothing Label — Complete Your Order"}
               </p>
             </div>
 
@@ -705,9 +564,11 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                 <div className="border border-black/15 bg-black/[0.02] p-5 sm:p-6 space-y-4">
                   <div className="flex items-center justify-between border-b border-black/10 pb-3">
                     <h2 className="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-2">
-                      <span>1. Contact Details</span>
+                      <span>{isArabic ? "١. بيانات العميل والتواصل" : "1. Contact Details"}</span>
                     </h2>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-black/40">Required</span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-black/40">
+                      {isArabic ? "مطلوب" : "Required"}
+                    </span>
                   </div>
 
                   {autoFillNotice && (
@@ -715,7 +576,11 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
                         <span className="text-black/85 text-[11px] truncate">
-                          Welcome back, <strong>{autoFillNotice.name}</strong>! Details auto-filled.
+                          {isArabic ? (
+                            <>أهلاً بعودتك يا <strong>{autoFillNotice.name}</strong>! تم ملء بياناتك تلقائياً.</>
+                          ) : (
+                            <>Welcome back, <strong>{autoFillNotice.name}</strong>! Details auto-filled.</>
+                          )}
                         </span>
                       </div>
                       <button
@@ -723,7 +588,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                         onClick={handleClearAutoFill}
                         className="text-[10px] font-mono uppercase tracking-wider text-black/50 hover:text-black underline cursor-pointer shrink-0 ml-3"
                       >
-                        Clear info
+                        {isArabic ? "مسح البيانات" : "Clear info"}
                       </button>
                     </div>
                   )}
@@ -731,7 +596,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-semibold uppercase tracking-widest text-black/60 mb-1.5">
-                        Full Name *
+                        {isArabic ? "الاسم بالكامل *" : "Full Name *"}
                       </label>
                       <input
                         type="text"
@@ -739,14 +604,14 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                         required
                         value={formData.name}
                         onChange={handleInputChange}
-                        placeholder="e.g. Omar Ahmed"
+                        placeholder={isArabic ? "مثال: عمر أحمد" : "e.g. Omar Ahmed"}
                         className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35"
                       />
                     </div>
 
                     <div>
                       <label className="block text-[10px] font-semibold uppercase tracking-widest text-black/60 mb-1.5">
-                        Age (Optional)
+                        {isArabic ? "العمر (اختياري)" : "Age (Optional)"}
                       </label>
                       <input
                         type="number"
@@ -755,7 +620,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                         max="80"
                         value={formData.age}
                         onChange={handleInputChange}
-                        placeholder="e.g. 21"
+                        placeholder={isArabic ? "مثال: ٢٢" : "e.g. 21"}
                         className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35"
                       />
                     </div>
@@ -765,11 +630,11 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="block text-[10px] font-semibold uppercase tracking-widest text-black/60">
-                          Phone Number *
+                          {isArabic ? "رقم الهاتف المحمول *" : "Phone Number *"}
                         </label>
                         {isLookingUpPhone && (
                           <span className="text-[10px] font-mono text-black/50 animate-pulse">
-                            Recognizing phone...
+                            {isArabic ? "التعرف على الهاتف..." : "Recognizing phone..."}
                           </span>
                         )}
                       </div>
@@ -785,14 +650,14 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                           }
                         }}
                         placeholder="01XXXXXXXXX"
-                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35"
+                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35 font-mono"
                       />
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="block text-[10px] font-semibold uppercase tracking-widest text-black/60">
-                          WhatsApp Number *
+                          {isArabic ? "رقم الواتساب *" : "WhatsApp Number *"}
                         </label>
                         <button
                           type="button"
@@ -809,8 +674,8 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                           }`}
                         >
                           {formData.phone && formData.whatsapp === formData.phone
-                            ? "✓ Same as phone"
-                            : "Same as phone"}
+                            ? isArabic ? "✓ نفس رقم الهاتف" : "✓ Same as phone"
+                            : isArabic ? "نفس رقم الهاتف" : "Same as phone"}
                         </button>
                       </div>
                       <input
@@ -820,7 +685,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                         value={formData.whatsapp}
                         onChange={handleInputChange}
                         placeholder="01XXXXXXXXX"
-                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35"
+                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35 font-mono"
                       />
                     </div>
                   </div>
@@ -830,15 +695,37 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                 <div className="border border-black/15 bg-black/[0.02] p-5 sm:p-6 space-y-4">
                   <div className="flex items-center justify-between border-b border-black/10 pb-3">
                     <h2 className="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-2">
-                      <span>2. Delivery Address</span>
+                      <span>{isArabic ? "٢. عنوان التوصيل" : "2. Delivery Address"}</span>
                     </h2>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-black/40">Egypt</span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-black/40">
+                      {isArabic ? "مصر" : "Egypt"}
+                    </span>
+                  </div>
+
+                  {/* Delivery Location Notice (Cairo & Giza Only) */}
+                  <div className="p-3 border border-black/15 bg-black/[0.02] flex items-start gap-2.5">
+                    <span className="text-sm mt-0.5 select-none shrink-0">📍</span>
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-[11px] uppercase tracking-wider text-black">
+                          {isArabic ? "التوصيل متاح حالياً داخل القاهرة والجيزة فقط" : "Delivery currently available in Cairo & Giza only"}
+                        </span>
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-black text-[#e7ecea]">
+                          {isArabic ? "حصري" : "EXCLUSIVE"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-black/65 font-sans leading-relaxed">
+                        {isArabic
+                          ? "نعتذر لعملائنا الكرام، التوصيل لباقي المحافظات سيتوفر قريباً جداً في التحديث القادم."
+                          : "Delivery to remaining governorates across Egypt will be available very soon in our next drop."}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-semibold uppercase tracking-widest text-black/60 mb-1.5">
-                        Governorate *
+                        {isArabic ? "المحافظة *" : "Governorate *"}
                       </label>
                       <select
                         name="governorate"
@@ -848,7 +735,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       >
                         {distinctGovernorates.map((gov) => (
                           <option key={gov} value={gov}>
-                            {gov}
+                            {isArabic ? (gov === "Cairo" ? "القاهرة" : gov === "Giza" ? "الجيزة" : gov) : gov}
                           </option>
                         ))}
                       </select>
@@ -856,7 +743,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
 
                     <div>
                       <label className="block text-[10px] font-semibold uppercase tracking-widest text-black/60 mb-1.5">
-                        Area / District *
+                        {isArabic ? "المنطقة / الحي *" : "Area / District *"}
                       </label>
                       <select
                         name="area"
@@ -865,7 +752,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                         onChange={handleInputChange}
                         className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none cursor-pointer"
                       >
-                        <option value="">Select your area...</option>
+                        <option value="">{isArabic ? "اختر منطقتك..." : "Select your area..."}</option>
                         {availableAreas.map((zone) => (
                           <option key={zone.area} value={zone.area}>
                             {zone.area}
@@ -877,7 +764,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
 
                   <div>
                     <label className="block text-[10px] font-semibold uppercase tracking-widest text-black/60 mb-1.5">
-                      Street Address & Building Details *
+                      {isArabic ? "العنوان بالتفصيل واسم الشارع والعمارة *" : "Street Address & Building Details *"}
                     </label>
                     <textarea
                       name="address"
@@ -885,76 +772,83 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       rows={3}
                       value={formData.address}
                       onChange={handleInputChange}
-                      placeholder="Street name, Building number, Apartment, Landmark..."
+                      placeholder={isArabic ? "اسم الشارع، رقم العمارة، رقم الشقة، علامة مميزة..." : "Street name, Building number, Apartment, Landmark..."}
                       className="w-full text-xs text-black border border-black/20 bg-black/[0.01] p-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35 resize-none leading-relaxed"
                     />
                   </div>
 
                   <div>
                     <label className="block text-[10px] font-semibold uppercase tracking-widest text-black/60 mb-1.5">
-                      Order Notes (Optional)
+                      {isArabic ? "ملاحظات إضافية للتوصيل (اختياري)" : "Order Notes (Optional)"}
                     </label>
                     <input
                       type="text"
                       name="notes"
                       value={formData.notes}
                       onChange={handleInputChange}
-                      placeholder="Special delivery instructions, preferred delivery time..."
+                      placeholder={isArabic ? "تعليمات خاصة للتوصيل، وقت مفضل للاستلام..." : "Special delivery instructions, preferred delivery time..."}
                       className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35"
                     />
                   </div>
                 </div>
               </form>
 
-              {/* Right Column: Single Extended Box (5 cols) */}
+              {/* Right Column: Order Summary */}
               <div className="lg:col-span-5">
                 <div className="border border-black/15 bg-black/[0.02] p-5 sm:p-6 space-y-5">
                   <div className="flex items-center justify-between border-b border-black/10 pb-3">
                     <h3 className="text-xs font-bold uppercase tracking-wider">
-                      Order Summary
+                      {isArabic ? "ملخص الطلب" : "Order Summary"}
                     </h3>
                     <span className="text-[11px] font-mono text-black/60">
-                      {totalCount} {totalCount === 1 ? "piece" : "pieces"}
+                      {totalCount} {totalCount === 1 ? (isArabic ? "قطعة" : "piece") : (isArabic ? "قطع" : "pieces")}
                     </span>
                   </div>
 
                   {/* Items List */}
                   <div className="divide-y divide-black/10 max-h-72 overflow-y-auto pr-1">
-                    {items.map((item) => (
-                      <div key={item.id} className="py-3 flex items-center gap-3">
-                        <div className="w-12 h-14 shrink-0 border border-black/15 bg-black/[0.03] flex items-center justify-center p-1">
-                          <img src={item.image} alt={item.title} className="max-h-full max-w-full object-contain" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold uppercase truncate">{item.title}</p>
-                          <p className="text-[11px] text-black/60">
-                            Size: {item.size} {item.color && `· ${item.color}`} · Qty: {item.quantity}
-                          </p>
-                        </div>
-                        <div className="text-right text-xs font-mono">
-                          {item.compareAtPrice && item.compareAtPrice > item.price ? (
-                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-black/40 line-through">
-                                {(item.compareAtPrice * item.quantity).toLocaleString()} EGP
-                              </span>
+                    {items.map((item) => {
+                      const itemTitle = translateTitle(item.title, item.slug, item.styling_notes);
+                      const itemColor = translateColor(item.color);
+
+                      return (
+                        <div key={item.id} className="py-3 flex items-center gap-3">
+                          <div className="relative w-12 h-14 shrink-0 border border-black/15 bg-white flex items-center justify-center p-1 overflow-hidden">
+                            {item.image ? (
+                              <Image src={item.image} alt={itemTitle} fill sizes="120px" quality={85} className="object-contain p-0.5" />
+                            ) : null}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold uppercase truncate">{itemTitle}</p>
+                            <p className="text-[11px] text-black/60">
+                              {isArabic ? "المقاس: " : "Size: "}{item.size} {itemColor && `· ${itemColor}`} · {isArabic ? "الكمية: " : "Qty: "}{item.quantity}
+                            </p>
+                          </div>
+                          <div className="text-right rtl:text-left text-xs font-mono">
+                            {item.compareAtPrice && item.compareAtPrice > item.price ? (
+                              <div className="flex flex-col items-end rtl:items-start">
+                                <span className="text-[10px] text-black/40 line-through">
+                                  {formatPrice(item.compareAtPrice * item.quantity)}
+                                </span>
+                                <span className="font-bold text-black">
+                                  {formatPrice(item.price * item.quantity)}
+                                </span>
+                              </div>
+                            ) : (
                               <span className="font-bold text-black">
-                                {(item.price * item.quantity).toLocaleString()} EGP
+                                {formatPrice(item.price * item.quantity)}
                               </span>
-                            </div>
-                          ) : (
-                            <span className="font-bold text-black">
-                              {(item.price * item.quantity).toLocaleString()} EGP
-                            </span>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Coupon Code Section */}
                   <div className="border-t border-black/10 pt-4 space-y-2">
                     <span className="text-[10px] uppercase tracking-wider font-semibold text-black/60 block">
-                      Promotional Code:
+                      {isArabic ? "كود الخصم الترويجي:" : "Promotional Code:"}
                     </span>
                     {appliedCoupon ? (
                       <div className="flex items-center justify-between border border-emerald-600 bg-emerald-50/70 px-3 py-2 text-xs text-emerald-800">
@@ -962,7 +856,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                           <Tag className="w-3.5 h-3.5" />
                           <span>{appliedCoupon.code}</span>
                           <span className="font-normal text-[11px]">
-                            ({appliedCoupon.discount_type === "percentage" ? `-${appliedCoupon.discount_value}%` : `-${appliedCoupon.discount_value} EGP`})
+                            ({appliedCoupon.discount_type === "percentage" ? `-${appliedCoupon.discount_value}%` : `-${appliedCoupon.discount_value} ${isArabic ? "ج.م" : "EGP"}`})
                           </span>
                         </div>
                         <button
@@ -979,7 +873,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                           type="text"
                           value={couponCodeInput}
                           onChange={(e) => setCouponCodeInput(e.target.value)}
-                          placeholder="e.g. MARSEL10"
+                          placeholder="MARSEL10"
                           className="flex-1 h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors uppercase font-mono tracking-wider placeholder:normal-case placeholder:font-sans placeholder:text-black/35 rounded-none"
                         />
                         <button
@@ -988,7 +882,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                           disabled={checkingCoupon || !couponCodeInput.trim()}
                           className="h-11 px-5 border border-black bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-wider hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-40 rounded-none flex items-center justify-center shrink-0"
                         >
-                          {checkingCoupon ? "..." : "Apply"}
+                          {checkingCoupon ? "..." : isArabic ? "تطبيق" : "Apply"}
                         </button>
                       </div>
                     )}
@@ -997,15 +891,22 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                     )}
                   </div>
 
-                  {/* Payment Notice (COD) - Inside Right Box */}
+                  {/* Payment Notice (COD & Inspection) */}
                   <div className="border border-black/15 bg-black/[0.03] p-4 flex items-start gap-3 text-xs text-black/80">
-                    <ShieldCheck className="w-5 h-5 text-black shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold uppercase tracking-wide text-xs">
-                        Cash on Delivery (COD) Only
-                      </p>
-                      <p className="text-[11px] text-black/60 mt-0.5 leading-relaxed">
-                        Pay upon delivery after inspecting your order. You can also pay via InstaPay / Vodafone Cash to the courier.
+                    <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold uppercase tracking-wide text-xs text-black">
+                          {isArabic ? "الدفع عند الاستلام مع المعاينة قبل الاستلام" : "Cash on Delivery with Pre-Inspection"}
+                        </p>
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 bg-emerald-700 text-white">
+                          {isArabic ? "معاينة مجانية" : "INSPECT FIRST"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-black/65 leading-relaxed font-sans">
+                        {isArabic
+                          ? "يحق لك فتح الطرد ومعاينة الخامات والمقاسات بكل طمأنينة مع المندوب قبل دفع أي جنيه. الدفع نقداً أو عبر إنستاباي للمندوب."
+                          : "Inspect your items and verify fit/quality with the courier before paying. Cash on delivery or InstaPay supported."}
                       </p>
                     </div>
                   </div>
@@ -1013,83 +914,85 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                   {/* Calculations / Summary */}
                   <div className="border-t border-black/10 pt-4 space-y-2.5 text-xs">
                     <div className="flex justify-between items-baseline">
-                      <span className="text-black/60 uppercase text-[11px]">Subtotal</span>
-                      <div className="text-right font-mono">
+                      <span className="text-black/60 uppercase text-[11px]">{isArabic ? "المجموع الفرعي" : "Subtotal"}</span>
+                      <div className="text-right rtl:text-left font-mono">
                         {productSavings > 0 ? (
                           <div className="flex items-center gap-2">
                             <span className="text-[11px] text-black/40 line-through">
-                              {originalSubtotal.toLocaleString()} EGP
+                              {formatPrice(originalSubtotal)}
                             </span>
                             <span className="font-semibold text-black">
-                              {totalPrice.toLocaleString()} EGP
+                              {formatPrice(totalPrice)}
                             </span>
                           </div>
                         ) : (
-                          <span className="font-semibold text-black">{totalPrice.toLocaleString()} EGP</span>
+                          <span className="font-semibold text-black">{formatPrice(totalPrice)}</span>
                         )}
                       </div>
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <span className="text-black/60 uppercase text-[11px]">Delivery</span>
+                      <span className="text-black/60 uppercase text-[11px]">{isArabic ? "التوصيل" : "Delivery"}</span>
                       <span className="font-mono">
                         {eligibleOffer ? (
-                          <div className="flex items-center gap-1.5 justify-end">
-                            <span className="text-emerald-700 font-bold uppercase tracking-wider">FREE</span>
+                          <div className="flex items-center gap-1.5 justify-end rtl:justify-start">
+                            <span className="text-emerald-700 font-bold uppercase tracking-wider">{isArabic ? "مجاناً" : "FREE"}</span>
                             <span className="text-[10px] text-emerald-800/80 font-sans font-normal">
-                              ({eligibleOffer.title})
+                              ({isArabic ? (eligibleOffer.titleAr || eligibleOffer.title) : eligibleOffer.title})
                             </span>
                           </div>
                         ) : formData.area ? (
-                          `${shippingFee} EGP`
+                          formatPrice(shippingFee)
                         ) : (
-                          <span className="text-black/40 text-[11px]">Select area</span>
+                          <span className="text-black/40 text-[11px]">{isArabic ? "اختر المنطقة" : "Select area"}</span>
                         )}
                       </span>
                     </div>
 
                     {productSavings > 0 && (
                       <div className="flex justify-between text-emerald-700 font-semibold">
-                        <span className="uppercase text-[11px]">Item Discount</span>
-                        <span className="font-mono">−{productSavings.toLocaleString()} EGP</span>
+                        <span className="uppercase text-[11px]">{isArabic ? "خصم المنتجات" : "Item Discount"}</span>
+                        <span className="font-mono">−{formatPrice(productSavings)}</span>
                       </div>
                     )}
 
                     {autoOfferDiscount > 0 && (
                       <div className="flex justify-between text-emerald-700 font-semibold">
                         <span className="uppercase text-[11px]">
-                          Offer: {evaluatedOffer.appliedOffer?.title || "Promotion"}
+                          {isArabic
+                            ? (evaluatedOffer.appliedOffer?.titleAr ? `عرض: ${evaluatedOffer.appliedOffer.titleAr}` : "خصم العرض")
+                            : `Offer: ${evaluatedOffer.appliedOffer?.title || "Promotion"}`}
                         </span>
-                        <span className="font-mono">−{autoOfferDiscount.toLocaleString()} EGP</span>
+                        <span className="font-mono">−{formatPrice(autoOfferDiscount)}</span>
                       </div>
                     )}
 
                     {couponDiscount > 0 && (
                       <div className="flex justify-between text-emerald-700 font-semibold">
-                        <span className="uppercase text-[11px]">Coupon ({appliedCoupon?.code})</span>
-                        <span className="font-mono">−{couponDiscount.toLocaleString()} EGP</span>
+                        <span className="uppercase text-[11px]">{isArabic ? "خصم الكوبون" : `Coupon (${appliedCoupon?.code})`}</span>
+                        <span className="font-mono">−{formatPrice(couponDiscount)}</span>
                       </div>
                     )}
 
                     <div className="border-t border-black/15 pt-3 flex justify-between items-end">
                       <div>
                         <span className="text-xl font-bold uppercase tracking-wide text-black leading-none block">
-                          Total
+                          {isArabic ? "الإجمالي" : "Total"}
                         </span>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right rtl:text-left">
                         {totalSavings > 0 && preDiscountTotal > finalOrderTotal && (
-                          <div className="flex items-center justify-end gap-2 mb-1">
+                          <div className="flex items-center justify-end rtl:justify-start gap-2 mb-1">
                             <span className="text-[11px] text-emerald-700 font-semibold uppercase tracking-wider">
-                              You saved {totalSavings.toLocaleString()} EGP
+                              {isArabic ? `وفرت ${formatPrice(totalSavings)}` : `You saved ${formatPrice(totalSavings)}`}
                             </span>
                             <span className="text-xs font-mono text-black/40 line-through">
-                              {preDiscountTotal.toLocaleString()} EGP
+                              {formatPrice(preDiscountTotal)}
                             </span>
                           </div>
                         )}
                         <span className="text-xl font-bold font-mono text-black leading-none">
-                          {finalOrderTotal.toLocaleString()} EGP
+                          {formatPrice(finalOrderTotal)}
                         </span>
                       </div>
                     </div>
@@ -1104,7 +1007,9 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       disabled={isSubmitting || !isFormValid}
                       className="w-full h-12 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center justify-center"
                     >
-                      {isSubmitting ? "Placing Order..." : `Place Order — ${finalOrderTotal.toLocaleString()} EGP`}
+                      {isSubmitting
+                        ? isArabic ? "جاري تسجيل طلبك..." : "Placing Order..."
+                        : isArabic ? `تأكيد وإرسال الطلب — ${formatPrice(finalOrderTotal)}` : `Place Order — ${formatPrice(finalOrderTotal)}`}
                     </button>
                   </div>
                 </div>

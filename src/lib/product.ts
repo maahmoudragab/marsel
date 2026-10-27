@@ -2,12 +2,7 @@ export const ALL_SIZES = ["S", "M", "L", "XL", "XXL"] as const;
 
 export const PRODUCT_CATEGORIES = [
   { value: "hoodie", label: "Hoodie" },
-  { value: "sweatshirt", label: "Sweatshirt" },
-  { value: "t-shirt", label: "T-Shirt" },
-  { value: "jeans", label: "Jeans" },
-  { value: "jacket", label: "Jacket" },
-  { value: "coat", label: "Coat" },
-  { value: "other", label: "Other" },
+  { value: "crewneck", label: "Crewneck" },
 ] as const;
 
 export const PRODUCT_FITS = [
@@ -18,7 +13,8 @@ export const PRODUCT_FITS = [
   "Tailored",
 ] as const;
 
-export const MAX_PRODUCT_IMAGES = 5;
+export const MAX_PRODUCT_IMAGES = 6;
+export const MAX_DESIGN_IMAGES = 2;
 
 export interface Product {
   id: string;
@@ -78,7 +74,32 @@ export function getGalleryImages(product: Pick<Product, "image" | "images">): st
 }
 
 export function categoryLabel(value: string): string {
-  return PRODUCT_CATEGORIES.find((c) => c.value === value)?.label ?? value;
+  const matched = PRODUCT_CATEGORIES.find((c) => c.value === value.toLowerCase());
+  if (matched) return matched.label;
+  if (value.toLowerCase() === "sweatshirt") return "Crewneck";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+export function parseDesignImages(url?: string | null): string[] {
+  if (!url) return [];
+  const trimmed = url.trim();
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      const arr = JSON.parse(trimmed);
+      if (Array.isArray(arr)) return arr.filter(Boolean).slice(0, MAX_DESIGN_IMAGES);
+    } catch {}
+  }
+  if (trimmed.includes(",")) {
+    return trimmed.split(",").map((s) => s.trim()).filter(Boolean).slice(0, MAX_DESIGN_IMAGES);
+  }
+  return [trimmed];
+}
+
+export function encodeDesignImages(urls: string[]): string {
+  const filtered = urls.filter(Boolean).slice(0, MAX_DESIGN_IMAGES);
+  if (filtered.length === 0) return "";
+  if (filtered.length === 1) return filtered[0];
+  return JSON.stringify(filtered);
 }
 
 export function normalizeProduct(row: Record<string, unknown>): Product {
@@ -185,17 +206,29 @@ export function compressImageFile(file: File, maxEdge = 1400): Promise<Blob> {
           return;
         }
         ctx.drawImage(img, 0, 0, width, height);
-        const keepAlpha = file.type === "image/png" || file.type === "image/webp";
+
+        // Export as WebP with 0.85 quality: preserves transparency (alpha) while reducing size by up to 90%
         canvas.toBlob(
           (blob) => {
             if (!blob) {
-              reject(new Error("Could not compress image"));
+              // Fallback to JPEG if browser doesn't support WebP canvas export
+              canvas.toBlob(
+                (fallback) => {
+                  if (!fallback) {
+                    reject(new Error("Could not compress image"));
+                    return;
+                  }
+                  resolve(fallback);
+                },
+                "image/jpeg",
+                0.85
+              );
               return;
             }
             resolve(blob);
           },
-          keepAlpha ? "image/png" : "image/jpeg",
-          keepAlpha ? undefined : 0.82
+          "image/webp",
+          0.85
         );
       };
       img.src = String(reader.result);
@@ -218,7 +251,12 @@ export async function prepareProductImage(
   upload: (blob: Blob, fileName: string) => Promise<string | null>
 ): Promise<string> {
   const blob = await compressImageFile(file);
-  const ext = blob.type === "image/png" ? "png" : "jpg";
+  const ext =
+    blob.type === "image/webp"
+      ? "webp"
+      : blob.type === "image/png"
+      ? "png"
+      : "jpg";
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const uploaded = await upload(blob, fileName);
   if (uploaded) return uploaded;

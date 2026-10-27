@@ -6,7 +6,7 @@ import FaqAccordion from "./FaqAccordion";
 import { getFaqSchema } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Frequently Asked Questions (FAQ) | MARSEL (مارسيل)",
+  title: "FAQ",
   description:
     "Everything you need to know about MARSEL: courier inspection before payment, nationwide Egyptian shipping in 2-4 days, 14-day returns, sizing, and founders.",
   keywords: [

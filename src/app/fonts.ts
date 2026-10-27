@@ -1,11 +1,10 @@
 import localFont from "next/font/local";
-import { Cairo } from "next/font/google";
 
-export const cairo = Cairo({
-  subsets: ["arabic", "latin"],
-  weight: ["400", "600", "700", "800", "900"],
-  variable: "--font-cairo",
+export const alexandria = localFont({
+  src: "./fonts/Alexandria-Variable.ttf",
+  variable: "--font-alexandria",
   display: "swap",
+  weight: "300 900",
 });
 
 export const supreme = localFont({

@@ -5,13 +5,14 @@ import { createClient } from "@/utils/supabase/client";
 import {
   normalizeProduct,
   createProductSlug,
+  MAX_PRODUCT_IMAGES,
   type Product,
   type ProductInput,
 } from "@/lib/product";
 
 export type { Product, ProductInput } from "@/lib/product";
 
-const PRODUCT_CACHE_KEY = "marsel_products_cache";
+const PRODUCT_CACHE_KEY = "marsel_products_cache_v3";
 const PRODUCT_CACHE_TTL = 5 * 60 * 1000;
 
 interface ProductContextType {
@@ -21,6 +22,7 @@ interface ProductContextType {
   updateProduct: (id: string, updated: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   toggleProductActive: (id: string, currentStatus: boolean) => Promise<void>;
+  reorderProducts: (orderedIds: string[]) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
@@ -81,7 +83,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
     const nextIndex = products.length
       ? Math.max(...products.map((product) => product.index)) + 1
       : 1;
-    const images = (productData.images ?? []).filter(Boolean).slice(0, 5);
+    const images = (productData.images ?? []).filter(Boolean).slice(0, MAX_PRODUCT_IMAGES);
     const cover = images[0] || productData.image || "/hoodie-cropped.png";
     const { data: createdProduct, error } = await supabase.from("products").insert({
       ...productData,
@@ -109,7 +111,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
     const payload: Partial<Product> = { ...updated };
     if (payload.title) payload.title = payload.title.toUpperCase();
     if (payload.images) {
-      payload.images = payload.images.filter(Boolean).slice(0, 5);
+      payload.images = payload.images.filter(Boolean).slice(0, MAX_PRODUCT_IMAGES);
       payload.image = payload.images[0] || payload.image;
     }
     if (payload.title) {
@@ -140,6 +142,54 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
     await fetchProducts({ force: true });
   };
 
+  const reorderProducts = async (orderedIds: string[]) => {
+    // 1. Optimistic update
+    setProducts((prev) => {
+      const map = new Map(prev.map((p) => [p.id, p]));
+      const nextList: Product[] = [];
+      orderedIds.forEach((id, idx) => {
+        const item = map.get(id);
+        if (item) nextList.push({ ...item, index: idx + 1 });
+      });
+      prev.forEach((p) => {
+        if (!orderedIds.includes(p.id)) nextList.push(p);
+      });
+      return nextList;
+    });
+
+    try {
+      // 2. Call server API (also handles ISR revalidation)
+      const res = await fetch("/api/admin/products/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Server reorder returned non-200");
+      }
+    } catch (err) {
+      console.warn("API reorder failed, running direct Supabase fallback...", err);
+      const supabase = createClient();
+      await Promise.all(
+        orderedIds.map((id, idx) =>
+          supabase.from("products").update({ index: 500000 + idx }).eq("id", id)
+        )
+      );
+      await Promise.all(
+        orderedIds.map((id, idx) =>
+          supabase.from("products").update({ index: idx + 1 }).eq("id", id)
+        )
+      );
+    }
+
+    try {
+      localStorage.removeItem(PRODUCT_CACHE_KEY);
+    } catch {}
+
+    await fetchProducts({ force: true });
+  };
+
   return (
     <ProductContext.Provider
       value={{
@@ -149,6 +199,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
         updateProduct,
         deleteProduct,
         toggleProductActive,
+        reorderProducts,
         refetch: fetchProducts,
       }}
     >

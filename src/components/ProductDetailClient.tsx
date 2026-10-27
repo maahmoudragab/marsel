@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import ProductCard from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
-import { categoryLabel, getGalleryImages, type Product } from "@/lib/product";
+import { useLanguage } from "@/context/LanguageContext";
+import { getGalleryImages, type Product } from "@/lib/product";
 import { Check } from "lucide-react";
 
 function AccordionSection({
@@ -26,7 +28,7 @@ function AccordionSection({
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between py-5 text-left cursor-pointer transition-colors hover:opacity-75"
+        className="w-full flex items-center justify-between py-5 text-left rtl:text-right cursor-pointer transition-colors hover:opacity-75"
       >
         <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-black">
           {title}
@@ -50,7 +52,7 @@ function SpecRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="flex items-baseline justify-between border-b border-black/10 py-2.5 text-xs">
       <span className="text-black/50 uppercase tracking-wider text-[11px]">{label}</span>
-      <span className="uppercase font-semibold text-black tracking-wide text-right">{value}</span>
+      <span className="uppercase font-semibold text-black tracking-wide text-right rtl:text-left">{value}</span>
     </div>
   );
 }
@@ -116,12 +118,20 @@ export default function ProductDetailClient({
   recommendations: Product[];
 }) {
   const { addToCart, openDrawer } = useCart();
+  const { dir, isArabic, t, translateProduct, formatPrice } = useLanguage();
+  const localized = translateProduct(product);
+
+  useEffect(() => {
+    const brand = isArabic ? "مارسيل" : "MARSEL";
+    const title = localized.title || product.title;
+    document.title = `${brand} | ${title.toUpperCase()}`;
+  }, [isArabic, localized.title, product.title]);
 
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [isAdded, setIsAdded] = useState(false);
-  // Default open section is "details" as requested
+  // Default open section is "details"
   const [openSection, setOpenSection] = useState<string>("details");
 
   const gallery = getGalleryImages(product);
@@ -138,6 +148,7 @@ export default function ProductDetailClient({
     duration: 25,
     skipSnaps: false,
     dragFree: false,
+    direction: dir,
   });
 
   useEffect(() => {
@@ -220,13 +231,11 @@ export default function ProductDetailClient({
       }
     });
 
-    // Filter strictly by the sizes that actually exist for this product
     const availableSizes = (product.sizes || []).map((s) => s.trim()).filter(Boolean);
 
     if (availableSizes.length > 0) {
       return availableSizes.map((size) => {
         const upper = size.toUpperCase();
-        // 1. Check if custom measurement exists in size_guide
         const custom = guideMap.get(upper);
         if (custom) {
           return {
@@ -237,7 +246,6 @@ export default function ProductDetailClient({
             sleeve: custom.sleeve || "-",
           };
         }
-        // 2. Check default measurement
         const def = DEFAULT_SIZING_MAP[upper];
         if (def) {
           return {
@@ -245,7 +253,6 @@ export default function ProductDetailClient({
             ...def,
           };
         }
-        // 3. Fallback for non-standard custom sizes
         return {
           size,
           chest: "-",
@@ -256,7 +263,6 @@ export default function ProductDetailClient({
       });
     }
 
-    // Fallback if product has no sizes defined
     if (parsedGuideRows.length > 0) {
       return parsedGuideRows;
     }
@@ -272,13 +278,13 @@ export default function ProductDetailClient({
 
   return (
     <>
-      {/* 1. TOP HERO SECTION: Perfectly fits desktop screen height alongside header + breadcrumb with ZERO scroll */}
-      <section className="pt-1 pb-4 lg:pb-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-stretch h-auto lg:h-[calc(100vh-6.5rem)] lg:min-h-[560px] lg:max-h-[820px]">
-        {/* Left: Gallery (Thumbnails + Natural Draggable Carousel) */}
-        <div className="flex flex-col sm:flex-row gap-3 min-h-0 h-[48vh] sm:h-[60vh] lg:h-full min-w-0">
-          {/* Thumbnails: Bottom on mobile (order-2), Left on desktop (sm:order-1) */}
+      {/* 1. TOP HERO SECTION */}
+      <section className="pt-0.5 pb-2 lg:pb-3 w-full h-auto lg:h-[calc(100dvh-7.5rem)] lg:max-h-[calc(100dvh-7.5rem)] min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-stretch">
+        {/* Gallery */}
+        <div className="flex flex-col sm:flex-row gap-3 min-w-0 min-h-0 w-full h-full items-start lg:items-stretch">
+          {/* Thumbnails */}
           {gallery.length > 1 && (
-            <div className="order-2 sm:order-1 flex sm:flex-col gap-2 shrink-0">
+            <div className="order-2 sm:order-1 flex sm:flex-col gap-2 shrink-0 overflow-x-auto sm:overflow-y-auto py-1 sm:py-0 max-w-full sm:max-h-full">
               {gallery.map((src, index) => {
                 const isActive = activeImage === index;
                 return (
@@ -290,18 +296,19 @@ export default function ProductDetailClient({
                     type="button"
                     onClick={() => handleThumbnailClick(index)}
                     aria-label={`View image ${index + 1}`}
-                    className={`w-12 h-12 sm:w-16 sm:h-16 border p-1 flex items-center justify-center cursor-pointer transition-colors shrink-0 bg-transparent ${
+                    className={`relative w-12 h-12 sm:w-16 sm:h-16 aspect-square border p-0 flex items-center justify-center cursor-pointer transition-colors shrink-0 bg-white overflow-hidden ${
                       isActive
                         ? "border-black"
                         : "border-black/20 hover:border-black/50"
                     }`}
                   >
-                    <img
+                    <Image
                       src={src}
                       alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="max-h-full max-w-full object-contain pointer-events-none"
+                      fill
+                      sizes="128px"
+                      quality={85}
+                      className="object-contain pointer-events-none p-0.5"
                     />
                   </button>
                 );
@@ -309,8 +316,8 @@ export default function ProductDetailClient({
             </div>
           )}
 
-          {/* Main Visual Display: Perfectly contained, no scrollbars, infinite loop */}
-          <div className="order-1 sm:order-2 relative flex-1 min-w-0 min-h-0 h-full border border-black/15 bg-black/[0.02] overflow-hidden select-none">
+          {/* Main Visual Display */}
+          <div className="order-1 sm:order-2 relative flex-1 min-w-0 min-h-0 w-full h-full max-h-full aspect-square border border-black/15 bg-white overflow-hidden select-none">
             <div
               ref={emblaRef}
               className="w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
@@ -322,15 +329,17 @@ export default function ProductDetailClient({
                 {slides.map((src, index) => (
                   <div
                     key={`${src}-${index}`}
-                    className="min-w-0 flex-[0_0_100%] h-full flex items-center justify-center p-2 sm:p-4 select-none"
+                    className="relative min-w-0 flex-[0_0_100%] h-full flex items-center justify-center p-0 select-none overflow-hidden"
                   >
-                    <img
+                    <Image
                       src={src}
-                      alt={`${product.title} — MARSEL (مارسيل) View ${index + 1}`}
+                      alt={`${localized.title} — MARSEL (مارسيل) View ${index + 1}`}
+                      fill
+                      priority={index === 0}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 70vw, 50vw"
+                      quality={95}
                       draggable={false}
-                      decoding="async"
-                      className="w-full h-full object-contain pointer-events-none select-none"
-                      fetchPriority={index === 0 ? "high" : undefined}
+                      className="object-contain pointer-events-none select-none"
                     />
                   </div>
                 ))}
@@ -339,23 +348,23 @@ export default function ProductDetailClient({
           </div>
         </div>
 
-        {/* Right: Studio Details & Actions — fits exactly in height with image */}
-        <div className="flex flex-col justify-between w-full h-auto lg:h-full min-h-0 p-0">
+        {/* Right: Studio Details & Actions */}
+        <div className="flex flex-col justify-between w-full h-auto lg:h-full min-h-0 p-0 gap-4 lg:gap-0 text-left rtl:text-right">
           {/* Top of Right Column */}
           <div>
             <span className="text-[10px] uppercase tracking-widest text-black/50 font-semibold block">
-              {product.collection || "DROP 01"} — {product.provenance || "EGYPT"}
+              {localized.collection || "DROP 01"} — {localized.provenance || "EGYPT"}
             </span>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold uppercase tracking-tight mt-1.5 text-black">
-              {product.title}
+              {localized.title}
             </h1>
             <div className="flex items-baseline gap-3 mt-3">
               <span className="text-xl sm:text-2xl font-bold font-mono text-black">
-                {product.price} EGP
+                {formatPrice(product.price)}
               </span>
               {product.compare_at_price && product.compare_at_price > product.price && (
                 <span className="text-sm text-black/40 line-through font-mono">
-                  {product.compare_at_price} EGP
+                  {formatPrice(product.compare_at_price)}
                 </span>
               )}
             </div>
@@ -363,25 +372,25 @@ export default function ProductDetailClient({
 
           {/* Middle: Quick Specification Rows */}
           <div className="space-y-0 border-t border-black/10 my-auto py-2">
-            <SpecRow label="Fit" value={product.fit || "Oversized Boxy"} />
-            <SpecRow label="Composition" value={product.composition || "100% Egyptian Cotton"} />
-            <SpecRow label="Structure" value={product.structure} />
-            <SpecRow label="Color" value={product.color_name} />
-            <SpecRow label="Category" value={categoryLabel(product.category)} />
+            <SpecRow label={t("fitLabel")} value={localized.fit || "Oversized Boxy"} />
+            <SpecRow label={t("compositionLabel")} value={localized.composition || "100% Egyptian Cotton"} />
+            <SpecRow label={t("structureLabel")} value={localized.structure} />
+            <SpecRow label={t("colorLabel")} value={localized.color_name} />
+            <SpecRow label={t("categoryLabel")} value={localized.category} />
           </div>
 
-          {/* Bottom of Right Column: Size Selector & Add to Bag (anchored to match bottom of image) */}
+          {/* Bottom of Right Column: Size Selector & Add to Bag */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] uppercase tracking-widest text-black/50 font-mono">
-                Size: <span className="font-bold text-black">{selectedSize}</span>
+                {t("sizeLabel")} <span className="font-bold text-black">{selectedSize}</span>
               </span>
               <button
                 type="button"
                 onClick={handleScrollToSize}
                 className="text-[10px] uppercase tracking-widest text-black/70 hover:text-black underline underline-offset-4 cursor-pointer transition-colors font-semibold"
               >
-                Size Guide ↓
+                {t("sizeGuideButton")}
               </button>
             </div>
 
@@ -412,7 +421,7 @@ export default function ProductDetailClient({
                 className="flex items-center justify-center gap-2 w-full h-12 mt-5 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 cursor-pointer shadow-sm animate-fade-in"
               >
                 <Check className="w-4 h-4 text-emerald-400" />
-                <span>Added · View in Bag →</span>
+                <span>{t("addedViewBag")}</span>
               </button>
             ) : (
               <div className="flex gap-2 mt-5 h-12">
@@ -440,7 +449,7 @@ export default function ProductDetailClient({
                   onClick={handleAddToCart}
                   className="flex-1 h-12 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest cursor-pointer hover:bg-black/85 transition-colors shadow-sm"
                 >
-                  Add to Bag
+                  {t("addToBag")}
                 </button>
               </div>
             )}
@@ -452,24 +461,39 @@ export default function ProductDetailClient({
       <section className="border-t border-black/25 mt-4">
         {/* 1. DETAILS & COMPOSITION (TOP & DEFAULT OPEN) */}
         <AccordionSection
-          title="Details & Composition"
+          title={t("detailsComposition")}
           isOpen={openSection === "details"}
           onToggle={() => toggleSection("details")}
         >
-          <div className="max-w-2xl space-y-3 pt-1">
-            <p className="text-black/80">{product.description}</p>
-            {product.story && <p className="text-black/60 italic">{product.story}</p>}
+          <div className="max-w-2xl space-y-3 pt-1 text-left rtl:text-right">
+            <p className="text-black/80">{localized.description}</p>
+            {localized.story && <p className="text-black/60 italic">{localized.story}</p>}
+
+            {localized.details && localized.details.length > 0 && (
+              <ul className="list-disc list-inside space-y-1 pt-2 text-black/80">
+                {localized.details.map((detail, idx) => (
+                  <li key={idx}>{detail}</li>
+                ))}
+              </ul>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 pt-2 border-t border-black/10">
-              <SpecRow label="Fabric" value={product.composition} />
-              <SpecRow label="Structure" value={product.structure} />
-              <SpecRow label="Weight" value={product.weight_grams ? `${product.weight_grams} g` : null} />
-              <SpecRow label="Origin" value={product.provenance || "EGYPT"} />
+              <SpecRow label={t("fabricLabel")} value={localized.composition} />
+              <SpecRow label={t("structureLabel")} value={localized.structure} />
+              <SpecRow
+                label={t("weightLabel")}
+                value={
+                  product.weight_grams
+                    ? `${product.weight_grams} ${isArabic ? "جم" : "g"}`
+                    : null
+                }
+              />
+              <SpecRow label={t("originLabel")} value={localized.provenance || (isArabic ? "مصر" : "EGYPT")} />
             </div>
 
-            {product.tags && product.tags.length > 0 && (
+            {((localized.tags && localized.tags.length > 0) || (product.tags && product.tags.length > 0)) && (
               <div className="flex flex-wrap gap-1.5 pt-2">
-                {product.tags.map((tag) => (
+                {(localized.tags && localized.tags.length > 0 ? localized.tags : product.tags || []).map((tag) => (
                   <span key={tag} className="border border-black/20 px-2 py-0.5 text-[10px] font-mono uppercase">
                     {tag}
                   </span>
@@ -479,32 +503,31 @@ export default function ProductDetailClient({
           </div>
         </AccordionSection>
 
-        {/* 2. SIZE & MEASUREMENTS (EQUAL HEIGHT TABLE & DIAGRAM) */}
+        {/* 2. SIZE & MEASUREMENTS */}
         <AccordionSection
           id="size-measurements-section"
-          title="Size & Measurements"
+          title={t("sizeMeasurements")}
           isOpen={openSection === "size"}
           onToggle={() => toggleSection("size")}
         >
-          <div className="space-y-4 pt-1">
-            {/* Single clean sentence as requested */}
+          <div className="space-y-4 pt-1 text-left rtl:text-right">
             <p className="text-black/80 text-xs sm:text-[13px] font-medium leading-relaxed">
-              Take your regular size for the intended oversized fit.
+              {localized.fit_notes || t("fitRecommendationSentence")}
             </p>
 
-            {/* Side-by-Side: Equal Height Table (Left) & Diagram (Right) */}
+            {/* Side-by-Side: Equal Height Table & Diagram */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch pt-1">
-              {/* Left Column: Sizing Table (7 Cols) */}
+              {/* Left: Sizing Table */}
               <div className="md:col-span-7 h-full flex flex-col justify-between">
                 <div className="border border-black/20 overflow-hidden h-full flex flex-col justify-between">
-                  <table className="w-full text-left text-xs font-mono h-full">
+                  <table className="w-full text-left rtl:text-right text-xs font-mono h-full">
                     <thead className="bg-black/5 border-b border-black/20 text-black font-bold uppercase text-[10px] tracking-wider">
                       <tr>
-                        <th className="p-3">Size</th>
-                        <th className="p-3">Chest (A)</th>
-                        <th className="p-3">Length (B)</th>
-                        <th className="p-3">Shoulder (C)</th>
-                        <th className="p-3">Sleeve (D)</th>
+                        <th className="p-3">{t("thSize")}</th>
+                        <th className="p-3">{t("thChest")}</th>
+                        <th className="p-3">{t("thLength")}</th>
+                        <th className="p-3">{t("thShoulder")}</th>
+                        <th className="p-3">{t("thSleeve")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-black/10">
@@ -514,10 +537,10 @@ export default function ProductDetailClient({
                           className="odd:bg-black/[0.04] even:bg-transparent"
                         >
                           <td className="p-3 font-bold">{row.size}</td>
-                          <td className="p-3">{row.chest === "-" ? "-" : `${row.chest} cm`}</td>
-                          <td className="p-3">{row.length === "-" ? "-" : `${row.length} cm`}</td>
-                          <td className="p-3">{row.shoulder === "-" ? "-" : `${row.shoulder} cm`}</td>
-                          <td className="p-3">{row.sleeve === "-" ? "-" : `${row.sleeve} cm`}</td>
+                          <td className="p-3">{row.chest === "-" ? "-" : `${row.chest} ${isArabic ? "سم" : "cm"}`}</td>
+                          <td className="p-3">{row.length === "-" ? "-" : `${row.length} ${isArabic ? "سم" : "cm"}`}</td>
+                          <td className="p-3">{row.shoulder === "-" ? "-" : `${row.shoulder} ${isArabic ? "سم" : "cm"}`}</td>
+                          <td className="p-3">{row.sleeve === "-" ? "-" : `${row.sleeve} ${isArabic ? "سم" : "cm"}`}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -525,13 +548,12 @@ export default function ProductDetailClient({
                 </div>
               </div>
 
-              {/* Right Column: Clean Technical Line Graphic (5 Cols) */}
+              {/* Right: Technical Measurement Graphic */}
               <div className="md:col-span-5 border border-black/15 p-4 bg-white/40 flex flex-col items-center justify-between h-full space-y-3">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-black/40">
-                  Technical Measurement Key
+                  {t("measurementKey")}
                 </span>
 
-                {/* Minimal Streetwear Vector Schematic */}
                 <svg
                   viewBox="0 0 280 230"
                   fill="none"
@@ -595,23 +617,23 @@ export default function ProductDetailClient({
                   <text x="32" y="91.5" textAnchor="middle" fontSize="9" fontWeight="bold" fontFamily="monospace" fill="#000">D</text>
                 </svg>
 
-                {/* Minimalist Legend */}
+                {/* Legend */}
                 <div className="w-full text-[10px] text-black/60 font-mono space-y-1 border-t border-black/10 pt-2">
                   <div className="flex justify-between">
-                    <span className="font-bold text-black">A — Chest:</span>
-                    <span>Pit to pit (flat)</span>
+                    <span className="font-bold text-black">{t("thChest")}:</span>
+                    <span>{t("chestDesc")}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-bold text-black">B — Length:</span>
-                    <span>Collar to hem</span>
+                    <span className="font-bold text-black">{t("thLength")}:</span>
+                    <span>{t("lengthDesc")}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-bold text-black">C — Shoulder:</span>
-                    <span>Seam to seam</span>
+                    <span className="font-bold text-black">{t("thShoulder")}:</span>
+                    <span>{t("shoulderDesc")}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-bold text-black">D — Sleeve:</span>
-                    <span>Drop shoulder to cuff</span>
+                    <span className="font-bold text-black">{t("thSleeve")}:</span>
+                    <span>{t("sleeveDesc")}</span>
                   </div>
                 </div>
               </div>
@@ -621,27 +643,26 @@ export default function ProductDetailClient({
 
         {/* 3. CARE & SHIPPING */}
         <AccordionSection
-          title="Care & Shipping"
+          title={t("careShipping")}
           isOpen={openSection === "care"}
           onToggle={() => toggleSection("care")}
         >
-          <div className="max-w-2xl space-y-4 pt-1">
+          <div className="max-w-2xl space-y-4 pt-1 text-left rtl:text-right">
             <div>
               <span className="font-bold uppercase tracking-wider text-[11px] block mb-1">
-                Washing & Maintenance:
+                {t("washingLabel")}
               </span>
               <p className="text-black/70">
-                {product.care ||
-                  "Machine wash cold at 30°C inside out. Do not bleach. Hang dry in shade. Warm iron on reverse side. Do not dry clean."}
+                {localized.care || t("washingDefault")}
               </p>
             </div>
 
             <div className="border-t border-black/10 pt-3">
               <span className="font-bold uppercase tracking-wider text-[11px] block mb-1">
-                Delivery & Returns:
+                {t("deliveryLabel")}
               </span>
               <p className="text-black/70">
-                Express shipping across Egypt within 2–4 business days. On-delivery inspection available with the courier. Items in original condition can be returned or exchanged within 14 days.
+                {t("deliveryDefault")}
               </p>
             </div>
           </div>
@@ -653,10 +674,10 @@ export default function ProductDetailClient({
         <section className="py-16 sm:py-24">
           <div className="flex items-baseline justify-between border-b border-black/20 pb-3 mb-8">
             <h2 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-black">
-              Recommended Drops
+              {t("recommendedDrops")}
             </h2>
             <span className="text-[10px] uppercase tracking-widest text-black/50 font-mono">
-              MARSEL ATELIER
+              {t("atelierLabel")}
             </span>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 sm:gap-x-10 gap-y-10">

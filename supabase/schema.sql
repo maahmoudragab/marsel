@@ -78,7 +78,7 @@ create table public.products (
   ),
   constraint products_weight_positive check (weight_grams is null or weight_grams > 0),
   constraint products_gender_valid check (gender in ('mens','womens','unisex','kids')),
-  constraint products_images_max check (cardinality(images) <= 5)
+  constraint products_images_max check (cardinality(images) <= 6)
 );
 
 create table public.orders (

@@ -87,13 +87,13 @@ async function resolveImageToBlobOrUrl(rawImage: string | undefined | null): Pro
   // 3. Local relative path in public directory (e.g. /hoodie-cropped.png or hoodie-cropped.png)
   const relPath = clean.replace(/^\/+/, "");
   const localCandidates = [
-    path.join(process.cwd(), "public", relPath),
-    path.join(process.cwd(), relPath),
+    path.join(/*turbopackIgnore: true*/ process.cwd(), "public", relPath),
+    path.join(/*turbopackIgnore: true*/ process.cwd(), relPath),
   ];
   for (const candidate of localCandidates) {
-    if (fs.existsSync(candidate)) {
+    if (fs.existsSync(/*turbopackIgnore: true*/ candidate)) {
       try {
-        const buffer = fs.readFileSync(candidate);
+        const buffer = fs.readFileSync(/*turbopackIgnore: true*/ candidate);
         const ext = path.extname(candidate).toLowerCase();
         const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
         return {

@@ -2,13 +2,14 @@ import React from "react";
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
+import HomeEmptyState from "@/components/HomeEmptyState";
 import Footer from "@/components/Footer";
 import { getProductsServer } from "@/lib/serverProducts";
+import { getItemListSchema } from "@/lib/seo";
 
 export const revalidate = 60; // SSR / ISR: revalidate every 60s for lightning speed and fresh inventory
 
 export const metadata: Metadata = {
-  title: "MARSEL (مارسيل) | Independent Streetwear Brand Cairo",
   description:
     "MARSEL (مارسيل) is an independent streetwear clothing label founded by Mahmoud Ragab in Cairo, Egypt. Heavyweight oversized hoodies, crewnecks, and boxy fit tees with nationwide cash on delivery.",
   keywords: [
@@ -60,7 +61,6 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const products = await getProductsServer();
-  const { getItemListSchema } = await import("@/lib/seo");
   const itemListSchema = getItemListSchema(products);
 
   return (
@@ -82,15 +82,11 @@ export default async function HomePage() {
         </h1>
 
         {products.length === 0 ? (
-          <div className="py-24 text-center">
-            <p className="text-xs uppercase tracking-widest text-black/50">
-              Drop coming soon. Follow our updates.
-            </p>
-          </div>
+          <HomeEmptyState />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-x-3.5 sm:gap-x-7 md:gap-x-9 gap-y-8 sm:gap-y-12 items-start">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {products.map((product, idx) => (
+              <ProductCard key={product.id} product={product} priority={idx < 4} />
             ))}
           </div>
         )}

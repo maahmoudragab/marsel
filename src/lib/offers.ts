@@ -17,6 +17,10 @@ export interface OfferConfig {
   show_banner?: boolean;
   banner_text?: string;
   notes?: string;
+  // Arabic Translations
+  title_ar?: string;
+  banner_text_ar?: string;
+  notes_ar?: string;
 }
 
 export interface RawOffer {
@@ -43,7 +47,9 @@ export interface RawOffer {
 export interface ParsedOffer {
   id: string;
   title: string;
+  titleAr?: string;
   description: string;
+  descriptionAr?: string;
   offerType: OfferType;
   discountValue: number;
   discountType: "fixed" | "percentage";
@@ -53,6 +59,7 @@ export interface ParsedOffer {
   governorate: string; // "all" or specific
   showBanner: boolean;
   bannerText: string;
+  bannerTextAr?: string;
   startsAt: string;
   endsAt: string;
   priority: number;
@@ -94,11 +101,16 @@ export function parseOffer(row: RawOffer): ParsedOffer {
   const governorate = (config?.governorate ?? row.governorate ?? "all") || "all";
   const showBanner = config?.show_banner ?? row.show_banner ?? true;
   const bannerText = config?.banner_text ?? row.banner_text ?? row.title;
+  const bannerTextAr = config?.banner_text_ar ?? "";
+  const titleAr = config?.title_ar ?? "";
+  const descriptionAr = config?.notes_ar ?? "";
 
   return {
     id: row.id,
     title: row.title,
+    titleAr,
     description: config?.notes || (config ? "" : row.description || ""),
+    descriptionAr,
     offerType,
     discountValue,
     discountType,
@@ -108,6 +120,7 @@ export function parseOffer(row: RawOffer): ParsedOffer {
     governorate,
     showBanner,
     bannerText,
+    bannerTextAr,
     startsAt: row.starts_at,
     endsAt: row.ends_at,
     priority: row.priority ?? 10,
@@ -142,6 +155,9 @@ export function encodeOfferPayload(data: Omit<ParsedOffer, "id" | "createdAt">):
     show_banner: Boolean(data.showBanner),
     banner_text: data.bannerText || data.title,
     notes: data.description || "",
+    title_ar: data.titleAr || "",
+    banner_text_ar: data.bannerTextAr || "",
+    notes_ar: data.descriptionAr || "",
   };
 
   // Legacy fallback compatibility for database check constraints:

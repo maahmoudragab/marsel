@@ -75,9 +75,12 @@ export default function OffersAndCouponsPage() {
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
   const [savingOffer, setSavingOffer] = useState(false);
+  const [translatingOffer, setTranslatingOffer] = useState(false);
   const [offerForm, setOfferForm] = useState({
     title: "",
+    titleAr: "",
     description: "",
+    descriptionAr: "",
     offerType: "order_discount" as OfferType,
     discountValue: 100,
     discountType: "fixed" as "fixed" | "percentage",
@@ -87,6 +90,7 @@ export default function OffersAndCouponsPage() {
     governorate: "all",
     showBanner: true,
     bannerText: "⚡ SPECIAL OFFER: Spend 1,000 EGP and get 100 EGP off at checkout!",
+    bannerTextAr: "",
     startsAt: toDateTimeLocalString(),
     endsAt: toDateTimeLocalString(new Date(Date.now() + 14 * 86400000).toISOString()),
     priority: 10,
@@ -247,7 +251,9 @@ export default function OffersAndCouponsPage() {
     setEditingOfferId(null);
     setOfferForm({
       title: defaultType === "free_shipping" ? "Free Delivery in Cairo" : "",
+      titleAr: defaultType === "free_shipping" ? "شحن مجاني للقاهرة" : "",
       description: "",
+      descriptionAr: "",
       offerType: defaultType,
       discountValue: defaultType === "order_discount" ? 100 : 0,
       discountType: "fixed",
@@ -257,6 +263,7 @@ export default function OffersAndCouponsPage() {
       governorate: "Cairo",
       showBanner: true,
       bannerText: "⚡ Free Delivery in Cairo for all orders!",
+      bannerTextAr: "⚡ شحن مجاني لجميع طلبات القاهرة لفترة محدودة!",
       startsAt: toDateTimeLocalString(),
       endsAt: toDateTimeLocalString(new Date(Date.now() + 14 * 86400000).toISOString()),
       priority: 10,
@@ -269,7 +276,9 @@ export default function OffersAndCouponsPage() {
     setEditingOfferId(offer.id);
     setOfferForm({
       title: offer.title,
+      titleAr: offer.titleAr || "",
       description: offer.description,
+      descriptionAr: offer.descriptionAr || "",
       offerType: offer.offerType,
       discountValue: offer.discountValue,
       discountType: offer.discountType,
@@ -279,12 +288,48 @@ export default function OffersAndCouponsPage() {
       governorate: offer.governorate,
       showBanner: offer.showBanner,
       bannerText: offer.bannerText,
+      bannerTextAr: offer.bannerTextAr || "",
       startsAt: toDateTimeLocalString(offer.startsAt),
       endsAt: toDateTimeLocalString(offer.endsAt),
       priority: offer.priority,
       isActive: offer.isActive,
     });
     setIsOfferModalOpen(true);
+  };
+
+  const handleAutoTranslateOffer = async () => {
+    if (!offerForm.title.trim() && !offerForm.bannerText.trim()) {
+      alert("Please enter English Title or Banner Text first.");
+      return;
+    }
+    setTranslatingOffer(true);
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fields: {
+            title: offerForm.title,
+            bannerText: offerForm.bannerText,
+            notes: offerForm.description,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.fields) {
+        setOfferForm((prev) => ({
+          ...prev,
+          titleAr: data.fields.title || prev.titleAr,
+          bannerTextAr: data.fields.bannerText || prev.bannerTextAr,
+          descriptionAr: data.fields.notes || prev.descriptionAr,
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to translate offer:", e);
+      alert("Translation failed. Please try again.");
+    } finally {
+      setTranslatingOffer(false);
+    }
   };
 
   const toggleOfferStatus = async (offer: ParsedOffer) => {
@@ -659,6 +704,14 @@ export default function OffersAndCouponsPage() {
                               : "Bundle Quantity Discount"}
                           </span>
                           <h3 className="font-bold text-base text-black mt-0.5">{offer.title}</h3>
+                          {offer.titleAr && (
+                            <div className="mt-1 text-xs font-sans text-emerald-800 flex items-center gap-1.5" dir="rtl">
+                              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                عربي
+                              </span>
+                              <span className="font-medium">{offer.titleAr}</span>
+                            </div>
+                          )}
                         </div>
                         <span
                           className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${live.color}`}
@@ -710,14 +763,23 @@ export default function OffersAndCouponsPage() {
                         </div>
 
                         {/* Banner Broadcast Preview */}
-                        <div className="border border-black/10 p-2.5 text-[11px] bg-black/[0.01]">
+                        <div className="border border-black/10 p-2.5 text-[11px] bg-black/[0.01] space-y-1">
                           <span className="text-[10px] uppercase font-bold text-black/50 block">
                             Website Top Banner:
                           </span>
-                          {offer.showBanner && offer.bannerText ? (
-                            <p className="font-mono text-black mt-0.5 line-clamp-2 text-xs">
-                              &ldquo;{offer.bannerText}&rdquo;
-                            </p>
+                          {offer.showBanner && (offer.bannerText || offer.bannerTextAr) ? (
+                            <>
+                              {offer.bannerText && (
+                                <p className="font-mono text-black mt-0.5 line-clamp-2 text-xs">
+                                  EN: &ldquo;{offer.bannerText}&rdquo;
+                                </p>
+                              )}
+                              {offer.bannerTextAr && (
+                                <p className="font-sans text-emerald-900 mt-1 line-clamp-2 text-xs border-t border-black/5 pt-1" dir="rtl">
+                                  عربي: &ldquo;{offer.bannerTextAr}&rdquo;
+                                </p>
+                              )}
+                            </>
                           ) : (
                             <span className="text-black/40 italic">Disabled on website header</span>
                           )}
@@ -1221,6 +1283,82 @@ export default function OffersAndCouponsPage() {
                     </span>
                   </div>
                 )}
+              </div>
+
+              {/* Storefront Arabic Translation Section */}
+              <div className="p-4 bg-black/[0.02] border border-black/25 space-y-3.5">
+                <div className="flex items-center justify-between border-b border-black/10 pb-2.5 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] bg-black text-[#e7ecea] font-bold px-1.5 py-0.5 tracking-wider uppercase">
+                      عربي
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-black">
+                      Storefront Arabic Translation
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAutoTranslateOffer}
+                    disabled={translatingOffer}
+                    className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-black text-[#e7ecea] hover:bg-black/80 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>{translatingOffer ? "Translating..." : "Auto-Translate with AI"}</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Arabic Title */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-black/80">
+                        Arabic Offer Title (عنوان العرض بالعربي)
+                      </label>
+                      <span className="text-[10px] text-black/40">Shown at Checkout & Invoices</span>
+                    </div>
+                    <input
+                      type="text"
+                      dir="rtl"
+                      value={offerForm.titleAr}
+                      onChange={(e) => setOfferForm({ ...offerForm, titleAr: e.target.value })}
+                      placeholder="مثال: شحن مجاني لكافة محافظات مصر"
+                      className={fieldClass + " font-sans"}
+                    />
+                  </div>
+
+                  {/* Arabic Banner Text */}
+                  {offerForm.showBanner && (
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-black/80">
+                          Arabic Top Banner Text (نص شريط الإعلانات بالعربي)
+                        </label>
+                        <span className="text-[10px] text-black/40">Displayed in top ticker when Arabic active</span>
+                      </div>
+                      <input
+                        type="text"
+                        dir="rtl"
+                        value={offerForm.bannerTextAr}
+                        onChange={(e) => setOfferForm({ ...offerForm, bannerTextAr: e.target.value })}
+                        placeholder="مثال: ⚡ شحن مجاني لكافة محافظات مصر لفترة محدودة · MARSEL"
+                        className={fieldClass + " font-sans"}
+                      />
+                    </div>
+                  )}
+
+                  {/* Live Arabic Banner Preview */}
+                  {offerForm.showBanner && (offerForm.bannerTextAr || offerForm.titleAr) && (
+                    <div className="p-2.5 bg-black text-[#f6f5f2] border border-black text-xs space-y-1">
+                      <span className="text-[9px] uppercase tracking-widest text-white/50 block font-mono">
+                        Arabic Banner Preview:
+                      </span>
+                      <p className="font-sans text-xs truncate" dir="rtl">
+                        {offerForm.bannerTextAr || offerForm.titleAr}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Start Date & End Date Down to the Minute */}
