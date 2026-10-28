@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
+// Rate limiting against mass PII harvesting (max 10 lookups per 5 minutes per IP)
+const lookupAttemptsMap = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  return request.headers.get("x-real-ip") || "unknown";
+}
+
 function getAdminClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +21,23 @@ function getAdminClient() {
 }
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  const now = Date.now();
+  const entry = lookupAttemptsMap.get(ip);
+
+  if (entry) {
+    if (entry.resetAt > now) {
+      if (entry.count >= 10) {
+        return NextResponse.json({ found: false, error: "Too many requests" }, { status: 429 });
+      }
+      entry.count += 1;
+    } else {
+      lookupAttemptsMap.set(ip, { count: 1, resetAt: now + 5 * 60 * 1000 });
+    }
+  } else {
+    lookupAttemptsMap.set(ip, { count: 1, resetAt: now + 5 * 60 * 1000 });
+  }
+
   const { searchParams } = request.nextUrl;
   const rawPhone = searchParams.get("phone")?.trim();
 

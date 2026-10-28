@@ -7,6 +7,21 @@ function getSecretKey(): string {
   return process.env.ADMIN_PASSWORD || process.env.ADMIN_SECRET_KEY || "marsel2026";
 }
 
+// Timing-safe string comparison to protect against side-channel timing attacks
+export function constantTimeEqual(a: string, b: string): boolean {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const aLen = a.length;
+  const bLen = b.length;
+  let mismatch = aLen ^ bLen;
+  const maxLen = Math.max(aLen, bLen);
+  for (let i = 0; i < maxLen; i++) {
+    const charA = i < aLen ? a.charCodeAt(i) : 0;
+    const charB = i < bLen ? b.charCodeAt(i) : 0;
+    mismatch |= charA ^ charB;
+  }
+  return mismatch === 0;
+}
+
 // Generate an HMAC-SHA256 signature using Web Crypto API (supported in Node & Edge)
 async function hmacSha256(message: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -49,14 +64,14 @@ export async function verifySessionToken(token: string | null | undefined): Prom
 
   const secret = getSecretKey();
   const expectedSignature = await hmacSha256(payload, secret);
-  return signature === expectedSignature;
+  return constantTimeEqual(signature, expectedSignature);
 }
 
 // Verify admin password
 export function verifyAdminPassword(password: string): boolean {
   if (!password) return false;
   const secret = getSecretKey();
-  return password.trim() === secret.trim();
+  return constantTimeEqual(password.trim(), secret.trim());
 }
 
 // ------------------------------------------------------------------
@@ -72,7 +87,7 @@ function getFactorySecretKey(): string {
 export function verifyFactoryPasscode(passcode: string): boolean {
   if (!passcode) return false;
   const secret = getFactorySecretKey();
-  return passcode.trim() === secret.trim();
+  return constantTimeEqual(passcode.trim(), secret.trim());
 }
 
 export async function createFactorySessionToken(): Promise<string> {
@@ -98,5 +113,5 @@ export async function verifyFactorySessionToken(token: string | null | undefined
 
   const secret = getFactorySecretKey();
   const expectedSignature = await hmacSha256(payload, secret);
-  return signature === expectedSignature;
+  return constantTimeEqual(signature, expectedSignature);
 }

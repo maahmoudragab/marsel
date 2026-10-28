@@ -121,15 +121,7 @@ export default async function ProductDetailPage({
 
       <Header />
 
-      <main className="max-w-[1700px]  mx-auto px-4 sm:px-8">
-        <div className="relative z-10 py-1 sm:py-1">
-          <nav className="text-[11px] font-mono uppercase tracking-wider text-black/50 flex items-center gap-1.5 flex-wrap">
-            <Link href="/" className="hover:text-black transition-colors font-mono">marsel</Link>
-            <span>/</span>
-            <span className="text-black font-semibold truncate max-w-[240px] sm:max-w-md">{product.title}</span>
-          </nav>
-        </div>
-
+      <main className="max-w-[1700px] mx-auto px-4 sm:px-8">
         <ProductDetailClient product={product} recommendations={recommendations} />
       </main>
 

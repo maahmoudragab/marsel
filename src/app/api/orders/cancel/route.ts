@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { ADMIN_SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { escapeTelegramHtml } from "@/lib/telegramBotService";
 
 function getSupabase() {
   return createSupabaseClient(
@@ -8,9 +11,15 @@ function getSupabase() {
   );
 }
 
+function normalizePhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const digits = phone.replace(/[^0-9]/g, "");
+  return digits.slice(-10); // Match last 10 digits
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { orderNumber, reason } = await request.json();
+    const { orderNumber, reason, phone } = await request.json();
 
     if (!orderNumber || typeof orderNumber !== "string") {
       return NextResponse.json({ error: "Order number is required" }, { status: 400 });
@@ -28,6 +37,28 @@ export async function POST(request: NextRequest) {
 
     if (fetchError || !order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // 1.1 Authorization Gate: verify caller is admin OR customer who owns the order
+    const cookieStore = await cookies();
+    const adminToken = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
+    const isAdmin = await verifySessionToken(adminToken);
+
+    if (!isAdmin) {
+      const orderPhoneNorm = normalizePhone(order.phone);
+      const secondaryPhoneNorm = normalizePhone(order.secondary_phone);
+      const reqPhoneNorm = normalizePhone(phone);
+
+      const isMatch =
+        reqPhoneNorm &&
+        (reqPhoneNorm === orderPhoneNorm || reqPhoneNorm === secondaryPhoneNorm);
+
+      if (!isMatch) {
+        return NextResponse.json(
+          { error: "التحقق مطلوب: يجب توفير رقم الهاتف المرتبط بالطلب لإلغائه." },
+          { status: 403 }
+        );
+      }
     }
 
     // 2. If already cancelled
@@ -54,9 +85,10 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    if (reason && typeof reason === "string" && reason.trim()) {
+    const cleanReason = reason && typeof reason === "string" ? reason.trim().slice(0, 500) : "";
+    if (cleanReason) {
       const existingNotes = order.notes ? `${order.notes} | ` : "";
-      updates.notes = `${existingNotes}Cancellation reason: ${reason.trim()}`;
+      updates.notes = `${existingNotes}Cancellation reason: ${cleanReason}`;
     }
 
     const { error: updateError } = await supabase
@@ -76,15 +108,16 @@ export async function POST(request: NextRequest) {
       try {
         const cleanPhone = (order.secondary_phone || order.phone).replace(/[^0-9]/g, "");
         const waPhone = cleanPhone.startsWith("0") ? `2${cleanPhone}` : cleanPhone;
+        const safeReason = escapeTelegramHtml(cleanReason);
         const alertHtml = `
 ❌ <b>ORDER CANCELLED BY CUSTOMER</b>
 ━━━━━━━━━━━━━━━━━━━━
-📦 <b>Order:</b> <code>#${order.order_number}</code>
-👤 <b>Customer:</b> <b>${order.customer_name}</b>
-📞 <b>Phone:</b> <code>${order.phone}</code>
-📍 <b>Destination:</b> <b>${order.governorate} — ${order.area}</b>
+📦 <b>Order:</b> <code>#${escapeTelegramHtml(order.order_number)}</code>
+👤 <b>Customer:</b> <b>${escapeTelegramHtml(order.customer_name)}</b>
+📞 <b>Phone:</b> <code>${escapeTelegramHtml(order.phone)}</code>
+📍 <b>Destination:</b> <b>${escapeTelegramHtml(order.governorate)} — ${escapeTelegramHtml(order.area)}</b>
 💰 <b>Total COD:</b> <b>${Number(order.total_amount).toLocaleString()} EGP</b>
-${reason ? `📝 <b>Reason:</b> <i>${reason.trim()}</i>\n` : ""}
+${safeReason ? `📝 <b>Reason:</b> <i>${safeReason}</i>\n` : ""}
 🛑 <b>Status:</b> Automatically updated to <b>CANCELLED</b> in database.
 👉 <a href="https://wa.me/${waPhone}">Chat on WhatsApp</a>
 `.trim();

@@ -5,19 +5,15 @@ import { MAINTENANCE_MODE } from "@/config/maintenance";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const host = request.headers.get("host") || "";
-  const forwardedHost = request.headers.get("x-forwarded-host") || "";
+  const host = (request.headers.get("host") || "").toLowerCase();
 
-  // Check if request is arriving through an admin subdomain
+  // Check if request is arriving through an authorized admin subdomain
   // e.g. admin.marsel.studio, themarsel-admin.vercel.app, admin-themarsel.vercel.app, admin.localhost:3000
   const isAdminSubdomain =
     host.startsWith("admin.") ||
     host.startsWith("admin-") ||
     host.includes("-admin.") ||
-    host.includes("admin.localhost") ||
-    forwardedHost.startsWith("admin.") ||
-    forwardedHost.startsWith("admin-") ||
-    forwardedHost.includes("-admin.");
+    host.includes("admin.localhost");
 
   // Map subdomain paths cleanly to /admin internal routes
   let effectivePath = pathname;
@@ -38,9 +34,12 @@ export async function middleware(request: NextRequest) {
     const hasPreviewCookie = request.cookies.get("marsel_preview")?.value === "1";
     const hasAdminSession = Boolean(request.cookies.get(ADMIN_SESSION_COOKIE)?.value);
 
+    const previewSecret = process.env.ADMIN_SECRET_KEY || process.env.ADMIN_PASSWORD || "marsel2026";
+    const isSecretMatch = previewParam ? previewParam === previewSecret : false;
+
     // Bypass check for admin previewing the store
     const isBypassed =
-      previewParam === "marsel2026" ||
+      isSecretMatch ||
       hasPreviewCookie ||
       hasAdminSession;
 
@@ -58,11 +57,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.rewrite(url);
     }
 
-    if (previewParam === "marsel2026") {
+    if (isSecretMatch) {
       const response = NextResponse.next();
       response.cookies.set("marsel_preview", "1", {
         path: "/",
         httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 24, // 24 hours
         sameSite: "lax",
       });

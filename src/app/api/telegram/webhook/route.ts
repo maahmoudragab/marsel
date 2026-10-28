@@ -3,6 +3,14 @@ import { processTelegramMessage, processTelegramCallback } from "@/lib/telegramB
 
 export async function POST(request: NextRequest) {
   try {
+    const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const headerSecret = request.headers.get("x-telegram-bot-api-secret-token");
+      if (headerSecret !== webhookSecret) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
     const update = await request.json();
 
     if (update && update.message && update.message.text) {

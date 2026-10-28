@@ -11,21 +11,35 @@ function getAdminClient() {
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const query = searchParams.get("query")?.trim();
+  const rawQuery = searchParams.get("query")?.trim();
 
-  if (!query) {
+  if (!rawQuery) {
     return NextResponse.json({ error: "Order code or phone is required" }, { status: 400 });
   }
 
   try {
     const supabase = getAdminClient();
-    const cleanQuery = query.toUpperCase();
+    const cleanOrderNumber = rawQuery.toUpperCase().replace(/[^A-Z0-9-]/g, "");
+    const cleanPhone = rawQuery.replace(/[^0-9]/g, "");
+
+    const conditions: string[] = [];
+    if (cleanOrderNumber.length >= 3) {
+      conditions.push(`order_number.eq.${cleanOrderNumber}`);
+    }
+    if (cleanPhone.length >= 10) {
+      conditions.push(`phone.eq.${cleanPhone}`);
+      conditions.push(`secondary_phone.eq.${cleanPhone}`);
+    }
+
+    if (conditions.length === 0) {
+      return NextResponse.json({ error: "Invalid order code or phone" }, { status: 400 });
+    }
 
     // 1. Search by order_number (e.g. MRS-...) or phone number
     let { data: order, error } = await supabase
       .from("orders")
       .select("id, order_number, customer_name, phone, secondary_phone, governorate, area, address, notes, subtotal_amount, shipping_fee, discount_amount, total_amount, payment_method, status, created_at, updated_at")
-      .or(`order_number.eq.${cleanQuery},phone.eq.${query}`)
+      .or(conditions.join(","))
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();

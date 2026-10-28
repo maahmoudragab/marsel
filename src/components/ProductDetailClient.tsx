@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import ProductCard from "@/components/ProductCard";
@@ -278,6 +279,19 @@ export default function ProductDetailClient({
 
   return (
     <>
+      {/* Localized Breadcrumb navigation */}
+      <div className="relative z-10 py-1 sm:py-1">
+        <nav className="text-[11px] font-mono uppercase tracking-wider text-black/50 flex items-center gap-1.5 flex-wrap">
+          <Link href="/" className="hover:text-black transition-colors font-mono">
+            {isArabic ? "مارسيل" : "marsel"}
+          </Link>
+          <span>/</span>
+          <span className="text-black font-semibold truncate max-w-[240px] sm:max-w-md">
+            {localized.title}
+          </span>
+        </nav>
+      </div>
+
       {/* 1. TOP HERO SECTION */}
       <section className="pt-0.5 pb-2 lg:pb-3 w-full h-auto lg:h-[calc(100dvh-7.5rem)] lg:max-h-[calc(100dvh-7.5rem)] min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-stretch">
         {/* Gallery */}

@@ -9,6 +9,7 @@ import {
   BRAND_KEYWORDS,
   getOrganizationSchema,
   getWebSiteSchema,
+  safeJsonLd,
 } from "@/lib/seo";
 
 export const viewport: Viewport = {
@@ -141,11 +142,11 @@ export default async function RootLayout({
         {/* Google Structured Data / Rich Snippets (Organization & WebSite) */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(orgSchema) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(webSiteSchema) }}
         />
       </head>
       <body className="antialiased bg-[#f6f5f2] text-black">

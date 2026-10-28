@@ -3,6 +3,7 @@
 import React from "react";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { CartProvider } from "@/context/CartContext";
+import { ViewModeProvider } from "@/context/ViewModeContext";
 import BagDrawer from "@/components/BagDrawer";
 import DynamicTabTitle from "@/components/DynamicTabTitle";
 
@@ -15,9 +16,11 @@ export default function Providers({ children, initialLanguage = "en" }: Provider
   return (
     <LanguageProvider initialLanguage={initialLanguage}>
       <CartProvider>
-        <DynamicTabTitle />
-        {children}
-        <BagDrawer />
+        <ViewModeProvider>
+          <DynamicTabTitle />
+          {children}
+          <BagDrawer />
+        </ViewModeProvider>
       </CartProvider>
     </LanguageProvider>
   );

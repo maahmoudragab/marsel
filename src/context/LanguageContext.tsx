@@ -51,12 +51,19 @@ export function LanguageProvider({
   const [language, setLanguageState] = useState<SupportedLanguage>(initialLanguage);
   const [hydrated, setHydrated] = useState(false);
 
-  // Synchronize document attributes (lang and dir)
+  // Synchronize document attributes (lang, dir, and font classes)
   const applyAttributes = useCallback((lang: SupportedLanguage) => {
     if (typeof document === "undefined") return;
     const isAr = lang === "ar";
     document.documentElement.lang = lang;
     document.documentElement.dir = isAr ? "rtl" : "ltr";
+    if (isAr) {
+      document.documentElement.classList.add("font-sans");
+      document.documentElement.classList.remove("font-mono");
+    } else {
+      document.documentElement.classList.add("font-mono");
+      document.documentElement.classList.remove("font-sans");
+    }
   }, []);
 
   // Initialize and synchronize with cookie & localStorage

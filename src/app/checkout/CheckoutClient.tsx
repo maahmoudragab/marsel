@@ -11,6 +11,13 @@ import { isEgyptianMobile } from "@/lib/validation";
 import { parseOffer, evaluateOffers, type RawOffer } from "@/lib/offers";
 import { getStandardGovernorateName } from "@/lib/egyptianLocations";
 import { useLanguage } from "@/context/LanguageContext";
+import {
+  CAIRO_GIZA_ZONES,
+  findZone,
+  getZonesByGovernorate,
+  getLocalizedArea,
+  type CairoGizaZone,
+} from "@/lib/cairoGizaZones";
 
 interface ShippingZone {
   governorate: string;
@@ -61,6 +68,7 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>(initialShippingZones);
   const [offers, setOffers] = useState<ActiveOffer[]>(initialOffers);
 
@@ -149,14 +157,64 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
     return ["Cairo", "Giza"];
   }, []);
 
-  const availableAreas = useMemo(
-    () => shippingZones.filter((zone) => isGovernorateMatch(zone.governorate, formData.governorate)),
-    [shippingZones, formData.governorate]
-  );
+  const availableZones = useMemo(() => {
+    return getZonesByGovernorate(formData.governorate);
+  }, [formData.governorate]);
 
-  const selectedZone = availableAreas.find((zone) => zone.area === formData.area);
+  // Synchronize formData.area when language switches between Arabic and English
+  useEffect(() => {
+    if (!formData.area) return;
+    const matched = findZone(formData.area, formData.governorate);
+    if (matched) {
+      const targetName = isArabic ? matched.nameAr : matched.nameEn;
+      if (targetName !== formData.area) {
+        setFormData((prev) => ({ ...prev, area: targetName }));
+      }
+    }
+  }, [isArabic, formData.governorate]);
+
+  // Re-translate active validation errors immediately when language switches
+  useEffect(() => {
+    if (Object.keys(fieldErrors).length === 0) return;
+    setFieldErrors((prev) => {
+      const next: Record<string, string> = {};
+      if (prev.name) next.name = isArabic ? "يرجى كتابة الاسم بالكامل" : "Please enter your full name";
+      if (prev.phone) {
+        next.phone = !formData.phone.trim()
+          ? (isArabic ? "يرجى كتابة رقم الهاتف المحمول" : "Please enter your phone number")
+          : (isArabic ? "رقم الهاتف غير صحيح. يرجى إدخال 11 رقماً يبدأ بـ 010 أو 011 أو 012 أو 015" : "Invalid phone. Must be 11 digits starting with 010, 011, 012, or 015");
+      }
+      if (prev.whatsapp) {
+        next.whatsapp = !formData.whatsapp.trim()
+          ? (isArabic ? "يرجى كتابة رقم الواتساب" : "Please enter your WhatsApp number")
+          : (isArabic ? "رقم الواتساب غير صحيح. يرجى إدخال 11 رقماً مصرياً صحيحاً" : "Invalid WhatsApp number. Must be an 11-digit Egyptian mobile number");
+      }
+      if (prev.governorate) next.governorate = isArabic ? "يرجى اختيار المحافظة" : "Please select your governorate";
+      if (prev.area) next.area = isArabic ? "يرجى اختيار المنطقة أو الحي" : "Please select your area";
+      if (prev.address) {
+        next.address = !formData.address.trim()
+          ? (isArabic ? "يرجى كتابة العنوان بالتفصيل واسم الشارع والعمارة" : "Please enter your full street address")
+          : (isArabic ? "العنوان قصير جداً، يرجى إضافة تفاصيل كافية لمندوب التوصيل" : "Address is too short, please provide more details");
+      }
+      if (prev.age) next.age = isArabic ? "يرجى كتابة عمر صحيح (بين 12 و 99)" : "Please enter a valid age (12 - 99)";
+      return next;
+    });
+  }, [isArabic, formData.phone, formData.whatsapp, formData.address]);
+
+  const selectedZone = useMemo(() => {
+    if (!formData.area) return null;
+    const matched = findZone(formData.area, formData.governorate);
+    if (matched) return matched;
+    return shippingZones.find((z) => isGovernorateMatch(z.governorate, formData.governorate) && z.area === formData.area);
+  }, [formData.area, formData.governorate, shippingZones]);
+
+  const baseShippingFee = useMemo(() => {
+    if (!selectedZone) return 0;
+    if ("shippingFee" in selectedZone) return selectedZone.shippingFee;
+    return (selectedZone as ShippingZone).shipping_fee ?? 0;
+  }, [selectedZone]);
+
   const parsedOffers = useMemo(() => offers.map((o) => parseOffer(o)), [offers]);
-  const baseShippingFee = selectedZone?.shipping_fee ?? 0;
 
   const evaluatedOffer = useMemo(() => {
     return evaluateOffers(parsedOffers, {
@@ -262,6 +320,22 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
       ...(name === "governorate" ? { area: "" } : {}),
     }));
 
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
+    }
+
+    if (name === "governorate" && fieldErrors.area) {
+      setFieldErrors((prev) => {
+        const copy = { ...prev };
+        delete copy.area;
+        return copy;
+      });
+    }
+
     if (name === "phone") {
       const clean = value.trim();
       if (isEgyptianMobile(clean) && !formData.name.trim()) {
@@ -341,133 +415,114 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormValid) {
-      setSubmitError("Please fill in all required fields (Name, Phone, WhatsApp, Area, Address).");
+    setSubmitError("");
+
+    if (items.length === 0) {
+      setSubmitError(isArabic ? "حقيبة التسوق فارغة." : "Your bag is empty. Please add items before checking out.");
       return;
     }
-    if (!selectedZone) {
-      setSubmitError("Please select an area for delivery.");
-      return;
+
+    const errors: Record<string, string> = {};
+
+    // 1. Full Name
+    if (!formData.name.trim()) {
+      errors.name = isArabic ? "يرجى كتابة الاسم بالكامل" : "Please enter your full name";
     }
-    if (!isEgyptianMobile(formData.phone) || !isEgyptianMobile(formData.whatsapp)) {
-      setSubmitError("Enter valid Egyptian mobile & WhatsApp numbers starting with 010, 011, 012, or 015.");
+
+    // 2. Mobile Phone
+    if (!formData.phone.trim()) {
+      errors.phone = isArabic ? "يرجى كتابة رقم الهاتف المحمول" : "Please enter your phone number";
+    } else if (!isEgyptianMobile(formData.phone)) {
+      errors.phone = isArabic
+        ? "رقم غير صحيح (يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015 ويتكون من 11 رقماً)"
+        : "Invalid mobile number (must start with 010, 011, 012, or 015 and be 11 digits)";
+    }
+
+    // 3. WhatsApp (Required)
+    if (!formData.whatsapp.trim()) {
+      errors.whatsapp = isArabic ? "يرجى كتابة رقم الواتساب" : "Please enter your WhatsApp number";
+    } else if (!isEgyptianMobile(formData.whatsapp.trim())) {
+      errors.whatsapp = isArabic
+        ? "رقم واتساب غير صحيح (يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015 ويتكون من 11 رقماً)"
+        : "Invalid WhatsApp number (must start with 010, 011, 012, or 015 and be 11 digits)";
+    }
+
+    // 4. Area
+    if (!formData.area.trim()) {
+      errors.area = isArabic ? "يرجى اختيار المنطقة أو الحي" : "Please select your area";
+    }
+
+    // 5. Detailed Address
+    if (!formData.address.trim()) {
+      errors.address = isArabic ? "يرجى كتابة العنوان بالتفصيل واسم الشارع والعمارة" : "Please enter your full street address";
+    } else if (formData.address.trim().length < 5) {
+      errors.address = isArabic ? "العنوان قصير جداً، يرجى إضافة تفاصيل كافية لمندوب التوصيل" : "Address is too short, please provide more details";
+    }
+
+    // 6. Age (optional, but validate if entered)
+    if (formData.age.trim()) {
+      const ageNum = parseInt(formData.age);
+      if (isNaN(ageNum) || ageNum < 12 || ageNum > 99) {
+        errors.age = isArabic ? "يرجى كتابة عمر صحيح (بين 12 و 99)" : "Please enter a valid age (12 - 99)";
+      }
+    }
+
+    // If any error exists: highlight inputs in red and scroll smoothly to the first problem
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setSubmitError("");
+
+      const fieldOrder = ["name", "age", "phone", "whatsapp", "governorate", "area", "address"];
+      const firstErrorKey = fieldOrder.find((k) => errors[k]);
+      if (firstErrorKey) {
+        const el = document.querySelector(`[name="${firstErrorKey}"]`) as HTMLElement | null;
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => el.focus({ preventScroll: true }), 300);
+        }
+      }
       return;
     }
 
     setIsSubmitting(true);
     setSubmitError("");
+    setFieldErrors({});
 
     try {
-      const supabase = createClient();
-      const generatedOrderNumber = `MRS-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
-      const productIds = [...new Set(items.map((item) => item.productId))];
-
-      const { data: existingProducts, error: productsError } = await supabase
-        .from("products")
-        .select("id")
-        .in("id", productIds);
-
-      if (productsError) throw productsError;
-      const existingProductIds = new Set((existingProducts ?? []).map((p) => p.id));
-
-      // 1. Insert order
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          order_number: generatedOrderNumber,
-          customer_name: formData.name.trim(),
-          customer_age: formData.age ? parseInt(formData.age) : null,
+      const payload = {
+        items: items.map((item) => ({
+          productId: item.productId,
+          size: item.size,
+          color: item.color,
+          quantity: item.quantity,
+          image: item.image,
+        })),
+        customer: {
+          name: formData.name,
+          age: formData.age,
           phone: formData.phone.trim(),
-          secondary_phone: formData.whatsapp.trim(),
+          whatsapp: formData.whatsapp.trim(),
           governorate: formData.governorate,
           area: formData.area,
-          address: formData.address.trim(),
-          notes: formData.notes.trim() || null,
-          subtotal_amount: totalPrice,
-          discount_amount: totalOrderDiscount,
-          shipping_fee: shippingFee,
-          total_amount: finalOrderTotal,
-          coupon_code: appliedCoupon ? appliedCoupon.code : null,
-          payment_method: "cash_on_delivery",
-          status: "pending",
-        })
-        .select("id")
-        .single();
+          address: formData.address,
+          notes: formData.notes,
+        },
+        couponCode: appliedCoupon?.code || null,
+      };
 
-      if (orderError || !orderData) {
-        throw orderError ?? new Error("Order creation failed");
-      }
-
-      // 2. Insert order items
-      const orderItems = items.map((item) => ({
-        order_id: orderData.id,
-        product_id: existingProductIds.has(item.productId) ? item.productId : null,
-        title: item.title,
-        size: item.size,
-        color: item.color,
-        price: item.price,
-        unit_price: item.price,
-        quantity: item.quantity,
-        total_price: item.price * item.quantity,
-        image: item.image,
-      }));
-
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
-      if (itemsError) throw itemsError;
-
-      // Increment coupon used_count if a coupon was used
-      if (appliedCoupon?.code) {
-        try {
-          const { data: cData } = await supabase
-            .from("coupons")
-            .select("used_count")
-            .eq("code", appliedCoupon.code)
-            .maybeSingle();
-
-          if (cData) {
-            await supabase
-              .from("coupons")
-              .update({ used_count: (Number(cData.used_count) || 0) + 1 })
-              .eq("code", appliedCoupon.code);
-          }
-        } catch (err: unknown) {
-          console.warn("Failed to increment coupon usage:", err);
-        }
-      }
-
-      // 3. Fire Telegram Alert in background
-      fetch("/api/orders/notify", {
+      const res = await fetch("/api/orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_number: generatedOrderNumber,
-          customer_name: formData.name.trim(),
-          customer_age: formData.age ? parseInt(formData.age) : null,
-          phone: formData.phone.trim(),
-          secondary_phone: formData.whatsapp.trim(),
-          governorate: formData.governorate,
-          area: formData.area,
-          address: formData.address.trim(),
-          notes: formData.notes.trim() || null,
-          subtotal_amount: totalPrice,
-          discount_amount: totalOrderDiscount,
-          shipping_fee: shippingFee,
-          total_amount: finalOrderTotal,
-          coupon_code: appliedCoupon?.code || null,
-          items: items.map((it) => ({
-            product_id: it.productId,
-            slug: it.slug,
-            title: it.title,
-            size: it.size,
-            color: it.color,
-            quantity: it.quantity,
-            price: it.price,
-            image: it.image,
-          })),
-        }),
-      }).catch((e) => console.error("Notification trigger error:", e));
+        body: JSON.stringify(payload),
+      });
 
-      // 4. Keep confirmed state and clear cart
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || "Order creation failed");
+      }
+
+      const generatedOrderNumber = result.orderNumber;
+
       // Persist customer delivery info for returning customer convenience
       try {
         localStorage.setItem(
@@ -553,10 +608,11 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
               {/* Left Column: Customer Form (7 cols) - Box 1: Contact Details & Box 2: Delivery Address */}
-              <form id="checkout-form" onSubmit={handleSubmitOrder} className="lg:col-span-7 space-y-6">
+              <form id="checkout-form" onSubmit={handleSubmitOrder} noValidate className="lg:col-span-7 space-y-6">
                 {submitError && (
-                  <div className="border border-red-400 bg-red-50/60 p-3 text-xs text-red-700">
-                    {submitError}
+                  <div className="border border-red-500/40 bg-red-500/[0.04] p-3 text-xs text-red-600 flex items-center gap-2">
+                    <span className="shrink-0 font-bold">⚠️</span>
+                    <span>{submitError}</span>
                   </div>
                 )}
 
@@ -601,12 +657,18 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       <input
                         type="text"
                         name="name"
-                        required
                         value={formData.name}
                         onChange={handleInputChange}
                         placeholder={isArabic ? "مثال: عمر أحمد" : "e.g. Omar Ahmed"}
-                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35"
+                        className={`w-full h-11 text-xs text-black px-3 transition-colors rounded-none placeholder:text-black/35 focus:outline-none ${
+                          fieldErrors.name
+                            ? "border border-red-500 bg-black/[0.01] focus:border-red-600"
+                            : "border border-black/20 bg-black/[0.01] focus:border-black"
+                        }`}
                       />
+                      {fieldErrors.name && (
+                        <p className="text-[10px] text-red-600 mt-1 font-sans">{fieldErrors.name}</p>
+                      )}
                     </div>
 
                     <div>
@@ -616,13 +678,20 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       <input
                         type="number"
                         name="age"
-                        min="14"
-                        max="80"
+                        min="12"
+                        max="99"
                         value={formData.age}
                         onChange={handleInputChange}
                         placeholder={isArabic ? "مثال: ٢٢" : "e.g. 21"}
-                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35"
+                        className={`w-full h-11 text-xs text-black px-3 transition-colors rounded-none placeholder:text-black/35 focus:outline-none ${
+                          fieldErrors.age
+                            ? "border border-red-500 bg-black/[0.01] focus:border-red-600"
+                            : "border border-black/20 bg-black/[0.01] focus:border-black"
+                        }`}
                       />
+                      {fieldErrors.age && (
+                        <p className="text-[10px] text-red-600 mt-1 font-sans">{fieldErrors.age}</p>
+                      )}
                     </div>
                   </div>
 
@@ -641,7 +710,6 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       <input
                         type="tel"
                         name="phone"
-                        required
                         value={formData.phone}
                         onChange={handleInputChange}
                         onBlur={() => {
@@ -650,8 +718,15 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                           }
                         }}
                         placeholder="01XXXXXXXXX"
-                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35 font-mono"
+                        className={`w-full h-11 text-xs text-black px-3 transition-colors rounded-none placeholder:text-black/35 font-mono focus:outline-none ${
+                          fieldErrors.phone
+                            ? "border border-red-500 bg-black/[0.01] focus:border-red-600"
+                            : "border border-black/20 bg-black/[0.01] focus:border-black"
+                        }`}
                       />
+                      {fieldErrors.phone && (
+                        <p className="text-[10px] text-red-600 mt-1 font-sans">{fieldErrors.phone}</p>
+                      )}
                     </div>
 
                     <div>
@@ -664,6 +739,13 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                           onClick={() => {
                             if (formData.phone) {
                               setFormData((prev) => ({ ...prev, whatsapp: prev.phone }));
+                              if (fieldErrors.whatsapp) {
+                                setFieldErrors((prev) => {
+                                  const copy = { ...prev };
+                                  delete copy.whatsapp;
+                                  return copy;
+                                });
+                              }
                             }
                           }}
                           disabled={!formData.phone}
@@ -681,12 +763,18 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       <input
                         type="tel"
                         name="whatsapp"
-                        required
                         value={formData.whatsapp}
                         onChange={handleInputChange}
                         placeholder="01XXXXXXXXX"
-                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35 font-mono"
+                        className={`w-full h-11 text-xs text-black px-3 transition-colors rounded-none placeholder:text-black/35 font-mono focus:outline-none ${
+                          fieldErrors.whatsapp
+                            ? "border border-red-500 bg-black/[0.01] focus:border-red-600"
+                            : "border border-black/20 bg-black/[0.01] focus:border-black"
+                        }`}
                       />
+                      {fieldErrors.whatsapp && (
+                        <p className="text-[10px] text-red-600 mt-1 font-sans">{fieldErrors.whatsapp}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -731,7 +819,11 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                         name="governorate"
                         value={formData.governorate}
                         onChange={handleInputChange}
-                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none cursor-pointer"
+                        className={`w-full h-11 text-xs text-black px-3 transition-colors rounded-none cursor-pointer focus:outline-none ${
+                          fieldErrors.governorate
+                            ? "border border-red-500 bg-black/[0.01] focus:border-red-600"
+                            : "border border-black/20 bg-black/[0.01] focus:border-black"
+                        }`}
                       >
                         {distinctGovernorates.map((gov) => (
                           <option key={gov} value={gov}>
@@ -739,6 +831,9 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                           </option>
                         ))}
                       </select>
+                      {fieldErrors.governorate && (
+                        <p className="text-[10px] text-red-600 mt-1 font-sans">{fieldErrors.governorate}</p>
+                      )}
                     </div>
 
                     <div>
@@ -747,18 +842,27 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       </label>
                       <select
                         name="area"
-                        required
                         value={formData.area}
                         onChange={handleInputChange}
-                        className="w-full h-11 text-xs text-black border border-black/20 bg-black/[0.01] px-3 focus:outline-none focus:border-black transition-colors rounded-none cursor-pointer"
+                        className={`w-full h-11 text-xs text-black px-3 transition-colors rounded-none cursor-pointer focus:outline-none ${
+                          fieldErrors.area
+                            ? "border border-red-500 bg-black/[0.01] focus:border-red-600"
+                            : "border border-black/20 bg-black/[0.01] focus:border-black"
+                        }`}
                       >
                         <option value="">{isArabic ? "اختر منطقتك..." : "Select your area..."}</option>
-                        {availableAreas.map((zone) => (
-                          <option key={zone.area} value={zone.area}>
-                            {zone.area}
-                          </option>
-                        ))}
+                        {availableZones.map((zone) => {
+                          const val = isArabic ? zone.nameAr : zone.nameEn;
+                          return (
+                            <option key={zone.id} value={val}>
+                              {val}
+                            </option>
+                          );
+                        })}
                       </select>
+                      {fieldErrors.area && (
+                        <p className="text-[10px] text-red-600 mt-1 font-sans">{fieldErrors.area}</p>
+                      )}
                     </div>
                   </div>
 
@@ -768,13 +872,19 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                     </label>
                     <textarea
                       name="address"
-                      required
                       rows={3}
                       value={formData.address}
                       onChange={handleInputChange}
                       placeholder={isArabic ? "اسم الشارع، رقم العمارة، رقم الشقة، علامة مميزة..." : "Street name, Building number, Apartment, Landmark..."}
-                      className="w-full text-xs text-black border border-black/20 bg-black/[0.01] p-3 focus:outline-none focus:border-black transition-colors rounded-none placeholder:text-black/35 resize-none leading-relaxed"
+                      className={`w-full text-xs text-black p-3 transition-colors rounded-none placeholder:text-black/35 resize-none leading-relaxed focus:outline-none ${
+                        fieldErrors.address
+                          ? "border border-red-500 bg-black/[0.01] focus:border-red-600"
+                          : "border border-black/20 bg-black/[0.01] focus:border-black"
+                      }`}
                     />
+                    {fieldErrors.address && (
+                      <p className="text-[10px] text-red-600 mt-1 font-sans">{fieldErrors.address}</p>
+                    )}
                   </div>
 
                   <div>
@@ -1004,8 +1114,8 @@ export default function CheckoutClient({ initialShippingZones = [], initialOffer
                       type="submit"
                       form="checkout-form"
                       onClick={handleSubmitOrder}
-                      disabled={isSubmitting || !isFormValid}
-                      className="w-full h-12 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center justify-center"
+                      disabled={isSubmitting}
+                      className="w-full h-12 bg-black text-[#f6f5f2] text-xs font-bold uppercase tracking-widest hover:bg-black/85 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait shadow-sm flex items-center justify-center active:scale-[0.99]"
                     >
                       {isSubmitting
                         ? isArabic ? "جاري تسجيل طلبك..." : "Placing Order..."

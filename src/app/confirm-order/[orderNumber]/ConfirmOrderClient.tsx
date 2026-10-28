@@ -91,6 +91,7 @@ export default function ConfirmOrderClient({ initialOrder }: { initialOrder: Ord
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderNumber: order.order_number,
+          phone: order.phone,
         }),
       });
 
@@ -129,6 +130,7 @@ export default function ConfirmOrderClient({ initialOrder }: { initialOrder: Ord
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderNumber: order.order_number,
+          phone: order.phone,
         }),
       });
 

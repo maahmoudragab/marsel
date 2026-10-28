@@ -5,11 +5,17 @@ import { createClient } from "@supabase/supabase-js";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const authorizedChatId = process.env.TELEGRAM_CHAT_ID;
 
 if (!token || !supabaseUrl || !supabaseKey) {
   console.error("❌ Missing TELEGRAM_BOT_TOKEN or NEXT_PUBLIC_SUPABASE_URL in .env.local");
   process.exit(1);
+}
+
+function isAuthorizedChat(incomingChatId) {
+  if (!incomingChatId || !authorizedChatId) return false;
+  return String(incomingChatId).trim() === String(authorizedChatId).trim();
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -75,6 +81,11 @@ Thank you for choosing MARSEL STORE.`.trim();
 }
 
 async function handleMessage(chatId, text) {
+  if (!isAuthorizedChat(chatId)) {
+    console.warn(`⚠️ [Security] Unauthorized message from chatId: ${chatId}`);
+    return;
+  }
+
   const cleanText = (text || "").trim();
   const lowerText = cleanText.toLowerCase();
 
@@ -389,6 +400,12 @@ async function handleCallbackQuery(cb) {
   const queryId = cb.id;
   const data = cb.data || "";
   const chatId = cb.message?.chat?.id;
+
+  if (!isAuthorizedChat(chatId)) {
+    console.warn(`⚠️ [Security] Unauthorized callback from chatId: ${chatId}`);
+    await answerCallbackQuery(queryId, "Unauthorized", true);
+    return;
+  }
 
   console.log(`🔘 [${new Date().toLocaleTimeString()}] Callback from ${cb.from?.first_name || "Admin"}: "${data}"`);
 

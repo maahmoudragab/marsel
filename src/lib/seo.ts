@@ -3,6 +3,14 @@ import { BRAND_CONFIG } from "@/config/brand";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://themarsel.vercel.app";
 
 /**
+ * Escapes serialized JSON strings for safe insertion into <script type="application/ld+json">
+ * Prevents HTML/XSS injection via </script> tags.
+ */
+export function safeJsonLd(obj: any): string {
+  return JSON.stringify(obj).replace(/</g, "\\u003c");
+}
+
+/**
  * Enhanced brand & founder keywords covering all bilingual search queries:
  * Latin variants, Arabic transliterations, founder name, intent & category
  */

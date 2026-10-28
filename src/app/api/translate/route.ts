@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { ADMIN_SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import { COLOR_TRANSLATIONS, FIT_TRANSLATIONS, CATEGORY_TRANSLATIONS } from "@/lib/translations";
 
 // High-precision Egyptian fashion & streetwear replacements for Marsel
@@ -210,8 +212,20 @@ async function translateText(
 
 export async function POST(req: Request) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
+    const isAuthorized = await verifySessionToken(token);
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { text, fields, targetLang = "ar", sourceLang = "en", fieldName } = body;
+    let { text, fields, targetLang = "ar", sourceLang = "en", fieldName } = body;
+
+    // Strict validation on supported language codes
+    if (!["ar", "en"].includes(targetLang)) targetLang = "ar";
+    if (!["ar", "en"].includes(sourceLang)) sourceLang = "en";
 
     // Single text translation
     if (typeof text === "string") {

@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { ADMIN_SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
+    const isAuthorized = await verifySessionToken(token);
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { orderedIds } = body as { orderedIds: string[] };
 

@@ -4,8 +4,9 @@ import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import HomeEmptyState from "@/components/HomeEmptyState";
 import Footer from "@/components/Footer";
+import FloatingViewToggle from "@/components/FloatingViewToggle";
 import { getProductsServer } from "@/lib/serverProducts";
-import { getItemListSchema } from "@/lib/seo";
+import { getItemListSchema, safeJsonLd } from "@/lib/seo";
 
 export const revalidate = 60; // SSR / ISR: revalidate every 60s for lightning speed and fresh inventory
 
@@ -64,11 +65,11 @@ export default async function HomePage() {
   const itemListSchema = getItemListSchema(products);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f6f5f2] text-black">
+    <div className="min-h-screen flex flex-col bg-[#f6f5f2] text-black" dir="ltr">
       {/* Google Products Carousel Schema (ItemList) */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListSchema) }}
       />
 
       {/* Header */}
@@ -91,6 +92,9 @@ export default async function HomePage() {
           </div>
         )}
       </main>
+
+      {/* Mobile/Touch Only Floating Front/Back View Dock */}
+      <FloatingViewToggle />
 
       {/* Footer */}
       <Footer />

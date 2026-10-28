@@ -50,10 +50,31 @@ function createWhatsAppConfirmationUrl(ord: any) {
   return `https://wa.me/${waPhone}?text=${encodeURIComponent(waText)}`;
 }
 
+function isAuthorizedChat(incomingChatId: string | number | undefined | null): boolean {
+  if (!incomingChatId) return false;
+  const configuredChatId = process.env.TELEGRAM_CHAT_ID;
+  if (!configuredChatId) return false;
+  return String(incomingChatId).trim() === String(configuredChatId).trim();
+}
+
+export function escapeTelegramHtml(str: string | number | null | undefined): string {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 export async function processTelegramMessage(chatId: string | number, text: string): Promise<boolean> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
     console.error("[TelegramBot] Token missing");
+    return false;
+  }
+
+  // Security Gate: Reject messages from unauthorized chat IDs to prevent data leaks
+  if (!isAuthorizedChat(chatId)) {
+    console.warn(`[TelegramBot] Unauthorized message attempt from chatId: ${chatId}`);
     return false;
   }
 
@@ -359,6 +380,12 @@ export async function processTelegramCallback(cb: any): Promise<boolean> {
   const queryId = cb?.id;
   const data = cb?.data || "";
   const chatId = cb?.message?.chat?.id;
+
+  if (!isAuthorizedChat(chatId)) {
+    console.warn(`[TelegramBot] Unauthorized callback attempt from chatId: ${chatId}`);
+    return false;
+  }
+
   const supabase = getSupabase();
 
   const answerCallback = async (text: string, showAlert = false) => {
